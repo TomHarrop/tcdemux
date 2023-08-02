@@ -106,7 +106,9 @@ rule check_pool_barcodes:
         'streams={threads} '
         '-Xmx{resources.mem_gb}g '
         'zl=9 '
-        '2> {log}'
+        '2> {log} '
+        '&& '
+        'mv {}'
 
 
 
