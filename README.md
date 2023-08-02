@@ -46,4 +46,4 @@ I think the most straightforward way to do this is using cutadapt's [paired adap
 
 Alternatively, you could use cutadapt's [regular demultiplexing mode](https://cutadapt.readthedocs.io/en/stable/guide.html#demultiplexing), although this would only check the first read:
 
->>> Paired-end demultiplexing always uses the adapter matches of the first read to decide where a read should be written. If adapters for read 2 are given (-A/-G), they are detected and removed as normal, but these matches do not influence where the read pair is written
+> Paired-end demultiplexing always uses the adapter matches of the first read to decide where a read should be written. If adapters for read 2 are given (-A/-G), they are detected and removed as normal, but these matches do not influence where the read pair is written
