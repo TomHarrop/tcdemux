@@ -88,6 +88,10 @@ rule check_pool_barcodes:
             logdir,
             'check_pool_barcodes.{pool}.log'
             )
+    threads:
+        2
+    resources:
+        mem_gb = 24
     container:
         bbmap
     shell:
@@ -96,8 +100,12 @@ rule check_pool_barcodes:
         'names={params.barcode_seq} '
         'out={params.out} '
         'out2={params.out2} '
+        'outu=/dev/null '
         'in={input.r1} '
         'in2={input.r2} '
+        'streams={threads} '
+        '-Xmx{resources.mem_gb}g '
+        'zl=9 '
         '2> {log}'
 
 
