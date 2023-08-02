@@ -2,6 +2,11 @@
 
 Demultiplex files for target capture.
 
+This will eventually need to perform two functions:
+
+1. Check external barcodes -> demux (in development)
+2. Check external barcodes only (TODO)
+
 ## Configuration
 
 Use a csv file of desired sample name, read file name, i5 barcode, i7 barcode, and internal barcode.

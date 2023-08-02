@@ -3,6 +3,7 @@
 from Bio.Seq import Seq
 from pathlib import Path
 import pandas as pd
+import tempfile
 
 def get_barcode_seq(wildcards):
     pool = wildcards.pool
@@ -53,63 +54,65 @@ rule target:
             pool = all_pools
             )
 
-rule check_pool_barcodes:
-    input:
-        unpack(get_pool_files)
-    output:
-        r1 = Path(
-            outdir,
-            '010_barcode-check',
-            '{pool}_r1.fastq.gz'
-            ),
-        r2 = Path(
-            outdir,
-            '010_barcode-check',
-            '{pool}_r2.fastq.gz'
-            ),
-        stats = Path(
-            outdir,
-            '010_barcode-check',
-            '{pool}.demux_stats.txt'
-            ),
-    params:
-        barcode_seq = lambda wildcards:
-            get_barcode_seq(wildcards),
-        out = Path(
-            outdir,
-            'tmp/reads/%_r1.fastq'
-            ).as_posix(),
-        out2 = Path(
-            outdir,
-            'tmp/reads/%_r2.fastq'
-            ).as_posix()
-    log:
-        Path(
-            logdir,
-            'check_pool_barcodes.{pool}.log'
-            )
-    threads:
-        2
-    resources:
-        mem_gb = 24
-    container:
-        bbmap
-    shell:
-        'demuxbyname.sh ' 
-        'delimiter=: prefixmode=f ' # use the last column
-        'names={params.barcode_seq} '
-        'out={params.out} '
-        'out2={params.out2} '
-        'outu=/dev/null '
-        'in={input.r1} '
-        'in2={input.r2} '
-        'streams={threads} '
-        '-Xmx{resources.mem_gb}g '
-        'zl=9 '
-        '2> {log} '
-        '&& '
-        'mv {}'
-
-
-
-
+with tempfile.TemporaryDirectory() as tmpdir:
+    rule check_pool_barcodes:
+        input:
+            unpack(get_pool_files)
+        output:
+            r1 = Path(
+                outdir,
+                '010_barcode-check',
+                '{pool}_r1.fastq.gz'
+                ),
+            r2 = Path(
+                outdir,
+                '010_barcode-check',
+                '{pool}_r2.fastq.gz'
+                ),
+            stats = Path(
+                outdir,
+                '010_barcode-check',
+                '{pool}.demux_stats.txt'
+                ),
+        params:
+            barcode_seq = lambda wildcards:
+                get_barcode_seq(wildcards),
+            out = Path(
+                tmpdir,
+                '%_r1.fastq.gz'
+                ).as_posix(),
+            out2 = Path(
+                tmpdir,
+                '%_r2.fastq.gz'
+                ).as_posix()
+        log:
+            Path(
+                logdir,
+                'check_pool_barcodes.{pool}.log'
+                )
+        threads:
+            5
+        resources:
+            mem_gb = 24
+        container:
+            bbmap
+        shell:
+            'streams=$(( {threads}/2 )) ;'
+            'demuxbyname.sh ' 
+            'delimiter=: prefixmode=f ' # use the last column
+            'names={params.barcode_seq} '
+            'out={params.out} '
+            'out2={params.out2} '
+            'outu=/dev/null '
+            'in={input.r1} '
+            'in2={input.r2} '
+            'streams=$streams '
+            '-Xmx{resources.mem_gb}g '
+            'zl=9 '
+            '2> {log} '
+            '&& '
+            'mv {tmpdir}/{params.barcode_seq}_r1.fastq.gz '
+            '{output.r1} '
+            '&& '
+            'mv {tmpdir}/{params.barcode_seq}_r2.fastq.gz '
+            '{output.r2}'
