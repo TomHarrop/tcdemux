@@ -40,6 +40,15 @@ names=          List of strings (or files containing strings) to parse from read
 
 ```
 
+You have to check how the external barcodes have been represented in the metadata. For example, in one set of metadata where the i5 index is listed as AGCGCTAG and the i7 index is listed as CCGCGGTT, the reads show up with headers like this:
+
+```
+    983 CCGCGGTT+CTAGCGCT
+```
+
+In this case, you would select the correct reads with names='CCGCGGTT+CTAGCGCT'. Check if the plus needs to be escaped.
+
+
 ### 2. Strict check for internal barcodes using cutadapt
 
 I think the most straightforward way to do this is using cutadapt's [paired adaptor demultiplex mode](https://cutadapt.readthedocs.io/en/stable/guide.html#unique-dual-indices) (so that both reads are checked).
