@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
+from Bio import SeqIO
 from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 from pathlib import Path
 import pandas as pd
 import tempfile
@@ -43,6 +45,8 @@ sample_data = pd.read_csv(
 all_samples = sorted(set(sample_data.index))
 all_pools = sorted(set(sample_data['pool_name']))
 
+all_samples = all_samples[0:1]
+
 
 rule target:
     input:
@@ -55,16 +59,6 @@ rule target:
             sample=all_samples
             )
 
-
-pool_sd.apply(print)
-adaptor_string=''
-for index, row in pool_sd.iterrows():
-    my_barcode = row['internal_index_sequence']
-    (f'{index}={my_barcode}')
-
-
-
-
 for mypool in all_pools:
     pool_sd = sample_data[sample_data['pool_name'] == mypool]
     pool_samples = sorted(set(pool_sd.index))
@@ -73,12 +67,17 @@ for mypool in all_pools:
             r1 = Path(
                 outdir,
                 '010_barcode-check',
-                f'{mypool}_r1.fastq.gz'
+                f'{mypool}_r1.fastq'
                 ),
             r2 = Path(
                 outdir,
                 '010_barcode-check',
-                f'{mypool}_r2.fastq.gz'
+                f'{mypool}_r2.fastq'
+                ),
+            barcodes = Path(
+                outdir,
+                '020_demultiplex',
+                f'{mypool}.barcodes.fasta'
                 )
         output:
             r1 = expand(
@@ -97,9 +96,44 @@ for mypool in all_pools:
                     ),
                 sample = pool_samples
                 )
+        params:
+            outdir = lambda wildcards, output:
+                Path(output[0]).parent.as_posix()
+        log:
+            Path(
+                logdir,
+                f'cutadapt.{mypool}.log'
+                )
+        threads:
+            16
+        container:
+            cutadapt
         shell:
-            'echo {input.r1} && '
-            'echo {output.r1}'
+            'cutadapt '
+            '-j {threads} '
+            '-e 0 '
+            '--no-indels '
+            '--pair-adapters '
+            '-g ^file:{input.barcodes} '
+            '-G ^file:{input.barcodes} '
+            '-o {params.outdir}/{{name}}_r1.fastq.gz '
+            '-p {params.outdir}/{{name}}_r2.fastq.gz '
+            '{input.r1} '
+            '{input.r2} '
+            '&> {log}'
+    rule:
+        input:
+            sample_data = sample_data_file
+        output:
+            barcode_file = Path(
+                outdir,
+                '020_demultiplex',
+                f'{mypool}.barcodes.fasta'
+                )
+        params:
+            pool = mypool
+        script:
+            'src/write_barcode_file.py'
 
 
 with tempfile.TemporaryDirectory() as tmpdir:
@@ -110,12 +144,12 @@ with tempfile.TemporaryDirectory() as tmpdir:
             r1 = Path(
                 outdir,
                 '010_barcode-check',
-                '{pool}_r1.fastq.gz'
+                '{pool}_r1.fastq'
                 ),
             r2 = Path(
                 outdir,
                 '010_barcode-check',
-                '{pool}_r2.fastq.gz'
+                '{pool}_r2.fastq'
                 ),
             stats = Path(
                 outdir,
@@ -127,11 +161,11 @@ with tempfile.TemporaryDirectory() as tmpdir:
                 get_barcode_seq(wildcards),
             out = Path(
                 tmpdir,
-                '%_r1.fastq.gz'
+                '%_r1.fastq'
                 ).as_posix(),
             out2 = Path(
                 tmpdir,
-                '%_r2.fastq.gz'
+                '%_r2.fastq'
                 ).as_posix()
         log:
             Path(
@@ -145,22 +179,23 @@ with tempfile.TemporaryDirectory() as tmpdir:
         container:
             bbmap
         shell:
-            'streams=$(( {threads}/2 )) ;'
+            'streams=$(( {threads}/2 )) ; '
             'demuxbyname.sh ' 
             'delimiter=: prefixmode=f ' # use the last column
             'names={params.barcode_seq} '
             'out={params.out} '
             'out2={params.out2} '
             'outu=/dev/null '
+            'stats={output.stats} '
             'in={input.r1} '
             'in2={input.r2} '
             'streams=$streams '
             '-Xmx{resources.mem_gb}g '
-            'zl=9 '
+            # 'zl=9 '
             '2> {log} '
             '&& '
-            'mv {tmpdir}/{params.barcode_seq}_r1.fastq.gz '
+            'mv {tmpdir}/{params.barcode_seq}_r1.fastq '
             '{output.r1} '
             '&& '
-            'mv {tmpdir}/{params.barcode_seq}_r2.fastq.gz '
+            'mv {tmpdir}/{params.barcode_seq}_r2.fastq '
             '{output.r2}'
