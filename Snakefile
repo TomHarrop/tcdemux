@@ -35,6 +35,7 @@ logdir = Path(outdir, 'logs')
 
 # containers
 bbmap = 'docker://quay.io/biocontainers/bbmap:39.01--h92535d8_1'
+cutadapt = 'docker://quay.io/biocontainers/cutadapt:4.4--py310h4b81fae_1'
 
 sample_data = pd.read_csv(
     sample_data_file, index_col='Name')
@@ -48,11 +49,58 @@ rule target:
         expand(
             Path(
                 outdir,
-                '010_barcode-check',
-                '{pool}.demux_stats.txt'
+                '020_demultiplex',
+                '{sample}_r1.fastq.gz'
                 ),
-            pool = all_pools
+            sample=all_samples
             )
+
+
+pool_sd.apply(print)
+adaptor_string=''
+for index, row in pool_sd.iterrows():
+    my_barcode = row['internal_index_sequence']
+    (f'{index}={my_barcode}')
+
+
+
+
+for mypool in all_pools:
+    pool_sd = sample_data[sample_data['pool_name'] == mypool]
+    pool_samples = sorted(set(pool_sd.index))
+    rule:
+        input:
+            r1 = Path(
+                outdir,
+                '010_barcode-check',
+                f'{mypool}_r1.fastq.gz'
+                ),
+            r2 = Path(
+                outdir,
+                '010_barcode-check',
+                f'{mypool}_r2.fastq.gz'
+                )
+        output:
+            r1 = expand(
+                Path(
+                    outdir,
+                    '020_demultiplex',
+                    '{sample}_r1.fastq.gz'
+                    ),
+                sample = pool_samples
+                ),
+            r2 = expand(
+                Path(
+                    outdir,
+                    '020_demultiplex',
+                    '{sample}_r2.fastq.gz'
+                    ),
+                sample = pool_samples
+                )
+        shell:
+            'echo {input.r1} && '
+            'echo {output.r1}'
+
 
 with tempfile.TemporaryDirectory() as tmpdir:
     rule check_pool_barcodes:
