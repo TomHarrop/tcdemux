@@ -1,15 +1,19 @@
 # tcdemux
 
-Demultiplex files for target capture.
-
-This will eventually need to perform two functions:
+Demultiplex files and prepare reads for target capture pipeline.
 
 1. Check external barcodes -> demux (in development)
-2. Check external barcodes only (TODO)
+2. Check external barcodes only (in development)
+3. Double check pairing (see te_run_2023_03)
+4. Decontaminate (probably not necessary)
+5. Trim adaptors (see te_run_2023_03)
+6. Mask low-complexity regions (TODO: see Alexander and Alicia's bbduk call)
 
 ## Configuration
 
-Use a csv file of desired sample name, read file name, i5 barcode, i7 barcode, and internal barcode.
+Ingest a csv with mandatory fields `name`, `i5_index`, `i7_index`, `r1_file`, `r2_file`.
+
+If the csv also has the `pool_name` field, demuxing by internal index sequence will happen. This also requires the `internal_index_sequence` field.
 
 ## Overview
 
@@ -52,7 +56,6 @@ You have to check how the external barcodes have been represented in the metadat
 ```
 
 In this case, you would select the correct reads with names='CCGCGGTT+CTAGCGCT'. Check if the plus needs to be escaped.
-
 
 ### 2. Strict check for internal barcodes using cutadapt
 
