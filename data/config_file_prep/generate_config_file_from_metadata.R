@@ -81,27 +81,21 @@ index_data[
 
 # clean up some colnames
 all_metadata[, internal_index_sequence := `Internal index sequence`]
-
-fn_field <- names(all_metadata)[
-  startsWith(
-    names(all_metadata),
-    "Filename"
-  )][[1]]
-all_metadata[, "filename" := get(fn_field)]
+all_metadata[, name := Name]
 
 # now get the sample data, including the pool name
-cols <- c("Name",
-          "filename",
-          "internal_index_sequence",
-          "pool_name",
-          "i5_index",
-          "i7_index"
-          )
+cols <- c(
+  "name",
+  "i5_index",
+  "i7_index",
+  "pool_name",
+  "internal_index_sequence"
+)
 
 tidy_metadata <- na.omit(all_metadata[, ..cols])
 
 # clean up the sample names (TODO: get human readable sample names)
-tidy_metadata[, Name := sub("_bbduk", "", Name)]
+tidy_metadata[, name := sub("_bbduk", "", name)]
 
 config_file <- merge(
   tidy_metadata,
