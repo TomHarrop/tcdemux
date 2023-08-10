@@ -80,12 +80,12 @@ def get_pool_files(wildcards):
 
 # config
 sample_data_file = Path('data', 'samples.csv')
-read_directory = Path('data', 'raw_data')
-# read_directory = Path('data', 'test_data') # 1000 reads/file
+# read_directory = Path('data', 'raw_data')
+read_directory = Path('data', 'test_data') # 1000 reads/file
 outdir = Path('output')
 logdir = Path(outdir, 'logs')
-keep_intermediate_files = True      # make this a cli option
-workingdir = outdir if keep_intermediate_files else tempfile.TemporaryDirectory()
+keep_intermediate_files = False      # make this a cli option
+workingdir = outdir if keep_intermediate_files else tempfile.mkdtemp()
 adaptor_files = [
     'data/adaptors/alicia_adapters.fa',
     'data/adaptors/TruSeq3-PE-2.fa'
@@ -112,12 +112,10 @@ all_samples = sorted(set(sample_data.index))
 # rules simpler.
 samples_have_internal_barcodes = False
 all_pools = []
-
 if 'pool_name' in sample_data:
     samples_have_internal_barcodes = True
     all_pools = sorted(set(sample_data['pool_name']))
 
-all_samples = all_samples[1:2]
 
 rule target:
     input:
