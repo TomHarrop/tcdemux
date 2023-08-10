@@ -80,8 +80,8 @@ def get_pool_files(wildcards):
 
 # config
 sample_data_file = Path('data', 'samples.csv')
-# read_directory = Path('data', 'raw_data')
-read_directory = Path('data', 'test_data') # 1000 reads/file
+read_directory = Path('data', 'raw_data')
+# read_directory = Path('data', 'test_data') # 1000 reads/file
 outdir = Path('output')
 logdir = Path(outdir, 'logs')
 keep_intermediate_files = True      # make this a cli option
@@ -117,7 +117,7 @@ if 'pool_name' in sample_data:
     samples_have_internal_barcodes = True
     all_pools = sorted(set(sample_data['pool_name']))
 
-# all_samples = all_samples[0:2]
+all_samples = all_samples[0:2]
 
 rule target:
     input:
@@ -226,7 +226,7 @@ rule trim:
             '{sample}.fastq'
             ),
         adaptors = Path(
-            workingdir, 
+            outdir, 
             '040_trim',
             'adaptors.fasta'
             ),
@@ -244,17 +244,17 @@ rule trim:
             '040_trim',
             '{sample}.unpaired.fastq'
             )
+            ),
+        stats = Path(
+            outdir,
+            '040_trim',
+            '{sample}.stats'
             )
     log:
-        log = Path(
+        Path(
             logdir,
             'trim',
             '{sample}.log'
-            ),
-        stats = Path(
-            logdir,
-            'trim',
-            '{sample}.stats'
             )
     resources:
         time = lambda wildcards, attempt: 10 * attempt
@@ -271,21 +271,21 @@ rule trim:
         'ref={input.adaptors} '
         'ktrim=r k=23 mink=11 hdist=1 tpe tbo '
         'forcetrimmod=5 '
-        'stats={log.stats} '
+        'stats={output.stats} '
         '>> {output.pipe} '
-        '2> {log.log} '
+        '2> {log} '
 
 rule combine_adaptors:
     input:
         adaptor_files
     output:
         adaptors = Path(
-            workingdir, 
+            outdir, 
             '040_trim',
             'adaptors.fasta'
             ),
         duplicates = Path(
-            workingdir, 
+            outdir, 
             '040_trim',
             'duplicated_adaptors.fasta'
             )
@@ -396,7 +396,8 @@ for mypool in all_pools:
         log:
             Path(
                 logdir,
-                f'cutadapt.{mypool}.log'
+                'cutadapt',
+                f'{mypool}.log'
                 )
         threads:
             16
@@ -464,7 +465,8 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
         log:
             Path(
                 logdir,
-                'check_pool_barcodes.{pool}.log'
+                'check_pool_barcodes',
+                '{pool}.log'
                 )
         threads:
             5
@@ -530,7 +532,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
         log:
             Path(
                 logdir,
-                'check_pool_barcodes.{sample}.log'
+                'check_pool_barcodes',
+                '{sample}.log'
                 )
         threads:
             5
