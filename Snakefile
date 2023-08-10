@@ -117,7 +117,7 @@ if 'pool_name' in sample_data:
     samples_have_internal_barcodes = True
     all_pools = sorted(set(sample_data['pool_name']))
 
-all_samples = all_samples[0:2]
+all_samples = all_samples[1:2]
 
 rule target:
     input:

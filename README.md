@@ -2,16 +2,16 @@
 
 Demultiplex files and prepare reads for target capture pipeline.
 
-1. Check external barcodes -> demux (in development)
-2. Check external barcodes only (in development)
-3. Double check pairing (see te_run_2023_03)
-4. Decontaminate (probably not necessary)
-5. Trim adaptors (see te_run_2023_03)
-6. Mask low-complexity regions (TODO: see Alexander and Alicia's bbduk call)
+1. Either:
+    a. Check external barcodes, then demux by internal barcode, or
+    b. Check external barcodes only
+3. Verify pairing
+4. Trim adaptors
+5. Mask low-complexity regions
 
 ### With internal barcodes
 
-**The anonymous rules are cutadapt demultiplexing runs**.
+**The numbered (anonymous) rules are cutadapt demultiplexing runs**.
 
 ![Snakemake rulegraph](assets/graph.svg)
 
