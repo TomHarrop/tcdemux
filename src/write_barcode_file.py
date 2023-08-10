@@ -10,7 +10,9 @@ barcode_file = snakemake.output['barcode_file']
 mypool = snakemake.params['pool']
 
 sample_data = pd.read_csv(
-    sample_data_file, index_col='Name')
+    sample_data_file,
+    index_col='name'
+    )
 
 # subset the data
 pool_sd = sample_data[sample_data['pool_name'] == mypool]

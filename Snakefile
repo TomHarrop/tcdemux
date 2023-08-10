@@ -7,6 +7,36 @@ from pathlib import Path
 import pandas as pd
 import tempfile
 
+
+def get_repair_input(wildcards):
+    if samples_have_internal_barcodes:
+        return {
+        'r1': Path(
+            workingdir,
+            '020_demultiplex',
+            '{sample}_r1.fastq'
+            ),
+        'r2': Path(
+            workingdir,
+            '020_demultiplex',
+            '{sample}_r2.fastq'
+            )
+        }
+    else:
+        return{
+        'r1': Path(
+            workingdir,
+            '010_barcode-check',
+            '{sample}_r1.fastq'
+            ),
+
+        'r2': Path(
+            workingdir,
+            '010_barcode-check',
+            '{sample}_r1.fastq'
+            ),
+        }
+
 def get_sample_barcode_seq(wildcards):
     sample = wildcards.sample
     my_sample_data = sample_data.loc[sample]
@@ -50,11 +80,17 @@ def get_pool_files(wildcards):
 
 # config
 sample_data_file = Path('data', 'samples.csv')
-read_directory = Path('data', 'raw_data')
+# read_directory = Path('data', 'raw_data')
+read_directory = Path('data', 'test_data') # 1000 reads/file
 outdir = Path('output')
 logdir = Path(outdir, 'logs')
 keep_intermediate_files = True      # make this a cli option
 workingdir = outdir if keep_intermediate_files else tempfile.TemporaryDirectory()
+adaptor_files = [
+    'data/adaptors/TruSeq3-PE-2.fa'
+        ]
+# adaptor references included with bbmap container
+adaptor_path = '/usr/local/opt/bbmap-39.01-1/resources/adapters.fa'
 
 # containers
 bbmap = 'docker://quay.io/biocontainers/bbmap:39.01--h92535d8_1'
@@ -62,7 +98,8 @@ cutadapt = 'docker://quay.io/biocontainers/cutadapt:4.4--py310h4b81fae_1'
 
 # read the sample data and get a list of samples
 sample_data = pd.read_csv(
-    sample_data_file, index_col='name')
+    sample_data_file,
+    index_col='name')
 
 all_samples = sorted(set(sample_data.index))
 
@@ -79,30 +116,239 @@ if 'pool_name' in sample_data:
     samples_have_internal_barcodes = True
     all_pools = sorted(set(sample_data['pool_name']))
 
-# all_samples = all_samples[0:1]
+all_samples = all_samples[0:2]
 
-if samples_have_internal_barcodes:
-    rule target:
-        input:
-            expand(
-                Path(
-                    workingdir,
-                    '020_demultiplex',
-                    '{sample}_r1.fastq'
-                    ),
-                sample=all_samples
-                )
-else:
-    rule target:
-        input:
-            expand(
-                Path(
-                    workingdir,
-                    '010_barcode-check',
-                    '{sample}_r1.fastq'
-                    ),
-                sample=all_samples
-                )
+rule target:
+    input:
+        expand(
+            Path(
+                outdir,
+                '050_processed-files',
+                '{sample}_r1.fastq.gz'
+                ),
+            sample=all_samples
+            ),
+        expand(
+            Path(
+                outdir,
+                '050_processed-files',
+                '{sample}.unpaired.fastq.gz'
+                ),
+            sample=all_samples
+            )
+
+# mask low complexity regions
+rule mask:
+    input:
+        pipe = Path(
+            workingdir,
+            '040_trim',
+            '{sample}.paired.fastq'
+            )
+    output:
+        r1 = Path(
+            outdir,
+            '050_processed-files',
+            '{sample}_r1.fastq.gz'
+            ),
+        r2 = Path(
+            outdir,
+            '050_processed-files',
+            '{sample}_r2.fastq.gz'
+            )
+    log:
+        Path(
+            logdir,
+            'mask',
+            '{sample}.log'
+            ),
+    resources:
+        time = lambda wildcards, attempt: 10 * attempt
+    container:
+        bbmap
+    shell:
+        'bbduk.sh '
+        '-Xmx{resources.mem_mb}m '
+        'threads={threads} '
+        'in={input.pipe} '
+        'int=t '
+        'out={output.r1} '
+        'out2={output.r2} '
+        'zl=9 '
+        'entropy=0.8 '
+        'entropywindow=20 '
+        'entropymask=t '
+        '2> {log} '
+
+rule mask_unpaired:
+    input:
+        Path(
+            workingdir,
+            '040_trim',
+            '{sample}.unpaired.fastq'
+            )
+    output:
+        Path(
+            outdir,
+            '050_processed-files',
+            '{sample}.unpaired.fastq.gz'
+            ),
+    log:
+        Path(
+            logdir,
+            'mask_unpaired',
+            '{sample}.log'
+            ),
+    resources:
+        time = lambda wildcards, attempt: 10 * attempt
+    container:
+        bbmap
+    shell:
+        'bbduk.sh '
+        '-Xmx{resources.mem_mb}m '
+        'threads={threads} '
+        'in={input} '
+        'int=f '
+        'out={output} '
+        'zl=9 '
+        'entropy=0.8 '
+        'entropywindow=20 '
+        'entropymask=t '
+        '2> {log} '
+
+# trim adaptors
+rule trim:
+    input:
+        pipe = Path(
+            workingdir,
+            '030_repair',
+            '{sample}.fastq'
+            ),
+        adaptors = Path(
+            workingdir, 
+            '040_trim',
+            'adaptors.fasta'
+            ),
+    output:
+        pipe = pipe(
+            Path(
+            workingdir,
+            '040_trim',
+            '{sample}.paired.fastq'
+            )
+            ),
+        unpaired = temp(
+            Path(
+            workingdir,
+            '040_trim',
+            '{sample}.unpaired.fastq'
+            )
+            )
+    log:
+        log = Path(
+            logdir,
+            'trim',
+            '{sample}.log'
+            ),
+        stats = Path(
+            logdir,
+            'trim',
+            '{sample}.stats'
+            )
+    resources:
+        time = lambda wildcards, attempt: 10 * attempt
+    container:
+        bbmap
+    shell:
+        'bbduk.sh '
+        '-Xmx{resources.mem_mb}m '
+        'threads={threads} '
+        'in={input.pipe} '
+        'int=t '
+        'out=stdout.fastq '
+        'outs={output.unpaired} '
+        'ref={input.adaptors} '
+        'ktrim=r k=23 mink=11 hdist=1 tpe tbo '
+        'forcetrimmod=5 '
+        'stats={log.stats} '
+        '>> {output.pipe} '
+        '2> {log.log} '
+
+rule combine_adaptors:
+    input:
+        adaptor_files
+    output:
+        adaptors = Path(
+            workingdir, 
+            '040_trim',
+            'adaptors.fasta'
+            ),
+        duplicates = Path(
+            workingdir, 
+            '040_trim',
+            'duplicated_adaptors.fasta'
+            )
+    log:
+        Path(
+            logdir,
+            'combine_adaptors.log')
+    threads:
+        2
+    resources:
+        time = lambda wildcards, attempt: 10 * attempt
+    container:
+        bbmap
+    shell:
+        'cat {input} {adaptor_path} | '
+        'dedupe.sh '
+        '-Xmx{resources.mem_mb}m '
+        'in=stdin.fasta '
+        'out={output.adaptors} '
+        'outd={output.duplicates} '
+        'absorbcontainment=f '
+        'absorbrc=f '
+        'ascending=t '
+        'exact=t '
+        'maxedits=0 '
+        'maxsubs=0 '
+        'sort=name '
+        'touppercase=t '
+        'uniquenames=t '
+        '2> {log} '
+
+
+# double check pairing
+rule repair:
+    input:
+        unpack(get_repair_input)
+    output:
+        pipe(
+            Path(
+            workingdir,
+            '030_repair',
+            '{sample}.fastq'
+            )
+            )
+    log:
+        Path(
+            logdir,
+            'repair',
+            '{sample}.log'),
+    resources:
+        time = lambda wildcards, attempt: 10 * attempt
+    container:
+        bbmap
+    shell:
+        'repair.sh '
+        '-Xmx{resources.mem_mb}m '
+        'in={input.r1} '
+        'in2={input.r2} '
+        'out=stdout.fastq '
+        'outs=/dev/null '
+        'repair=t '
+        'tossbrokenreads=t '
+        '>> {output} '
+        '2> {log}'
 
 # demux using cutadapt
 for mypool in all_pools:
@@ -182,7 +428,7 @@ for mypool in all_pools:
             'src/write_barcode_file.py'
 
 # check barcodes in pooled fastq files
-with tempfile.TemporaryDirectory() as tmpdir:
+with tempfile.TemporaryDirectory() as rule_tmpdir:
     rule check_pool_barcodes:
         input:
             unpack(get_pool_files)
@@ -206,11 +452,11 @@ with tempfile.TemporaryDirectory() as tmpdir:
             barcode_seq = lambda wildcards:
                 get_pool_barcode_seq(wildcards),
             out = Path(
-                tmpdir,
+                rule_tmpdir,
                 '%_r1.fastq'
                 ).as_posix(),
             out2 = Path(
-                tmpdir,
+                rule_tmpdir,
                 '%_r2.fastq'
                 ).as_posix()
         log:
@@ -226,6 +472,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
             bbmap
         shell:
             'streams=$(( {threads}/2 )) ; '
+            'mkdir -p {rule_tmpdir} ; '
             'demuxbyname.sh ' 
             'delimiter=: prefixmode=f ' # use the last column
             'names={params.barcode_seq} '
@@ -239,10 +486,10 @@ with tempfile.TemporaryDirectory() as tmpdir:
             '-Xmx{resources.mem_gb}g '
             '2> {log} '
             '&& '
-            'mv {tmpdir}/{params.barcode_seq}_r1.fastq '
+            'mv {rule_tmpdir}/{params.barcode_seq}_r1.fastq '
             '{output.r1} '
             '&& '
-            'mv {tmpdir}/{params.barcode_seq}_r2.fastq '
+            'mv {rule_tmpdir}/{params.barcode_seq}_r2.fastq '
             '{output.r2}'
 
 

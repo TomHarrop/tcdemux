@@ -9,6 +9,8 @@ Demultiplex files and prepare reads for target capture pipeline.
 5. Trim adaptors (see te_run_2023_03)
 6. Mask low-complexity regions (TODO: see Alexander and Alicia's bbduk call)
 
+![Snakemake rulegraph](assets/graph.svg)
+
 ## Configuration
 
 Ingest a csv with mandatory fields `name`, `i5_index`, `i7_index`, `r1_file`, `r2_file`.
