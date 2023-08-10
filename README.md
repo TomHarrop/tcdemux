@@ -9,7 +9,13 @@ Demultiplex files and prepare reads for target capture pipeline.
 5. Trim adaptors (see te_run_2023_03)
 6. Mask low-complexity regions (TODO: see Alexander and Alicia's bbduk call)
 
+### With internal barcodes
+
 ![Snakemake rulegraph](assets/graph.svg)
+
+### With only external barcodes
+
+![Snakemake rulegraph](assets/external_only_graph.svg)
 
 ## Configuration
 

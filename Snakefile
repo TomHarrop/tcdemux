@@ -33,7 +33,7 @@ def get_repair_input(wildcards):
         'r2': Path(
             workingdir,
             '010_barcode-check',
-            '{sample}_r1.fastq'
+            '{sample}_r2.fastq'
             ),
         }
 
@@ -347,6 +347,7 @@ rule repair:
         'outs=/dev/null '
         'repair=t '
         'tossbrokenreads=t '
+        'tossjunk=t '
         '>> {output} '
         '2> {log}'
 
