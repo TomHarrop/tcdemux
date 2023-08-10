@@ -11,6 +11,8 @@ Demultiplex files and prepare reads for target capture pipeline.
 
 ### With internal barcodes
 
+**The anonymous rules are cutadapt demultiplexing runs**.
+
 ![Snakemake rulegraph](assets/graph.svg)
 
 ### With only external barcodes

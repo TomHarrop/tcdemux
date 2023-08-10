@@ -87,6 +87,7 @@ logdir = Path(outdir, 'logs')
 keep_intermediate_files = True      # make this a cli option
 workingdir = outdir if keep_intermediate_files else tempfile.TemporaryDirectory()
 adaptor_files = [
+    'data/adaptors/alicia_adapters.fa',
     'data/adaptors/TruSeq3-PE-2.fa'
         ]
 # adaptor references included with bbmap container
@@ -116,7 +117,7 @@ if 'pool_name' in sample_data:
     samples_have_internal_barcodes = True
     all_pools = sorted(set(sample_data['pool_name']))
 
-all_samples = all_samples[0:2]
+# all_samples = all_samples[0:2]
 
 rule target:
     input:
