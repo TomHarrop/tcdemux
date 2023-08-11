@@ -20,6 +20,6 @@ RUN     apt-get install -y  --no-install-recommends \
 COPY    . /source
 
 RUN     /usr/local/bin/python3.10 \
-            -m pip install .
+            -m pip install /source
 
 ENTRYPOINT ["/usr/local/bin/tcdemux"]
