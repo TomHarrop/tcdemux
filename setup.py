@@ -10,7 +10,6 @@ def readme():
     with open('README.rst') as file:
         return file.read()
 
-
 setup(
     name='tcdemux',
     version='0.0.0a0',

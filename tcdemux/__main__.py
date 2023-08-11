@@ -85,7 +85,7 @@ def main():
     logging.basicConfig(
         format='%(asctime)s %(levelname)-8s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
-        level=logging.DEBUG)
+        level=logging.INFO)
 
     # get the snakefile
     snakefile = resource_filename(__name__, 'Snakefile')
