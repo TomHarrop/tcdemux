@@ -17,6 +17,8 @@ RUN     apt-get install -y  --no-install-recommends \
             bbmap \
             pigz
 
+COPY    VERSION /app/VERSION
+
 RUN     export VERSION=$(cat /app/VERSION) &&\
         /usr/local/bin/python3.10 \
             -m pip install \
