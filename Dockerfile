@@ -17,8 +17,9 @@ RUN     apt-get install -y  --no-install-recommends \
             bbmap \
             pigz
 
+COPY    . /source
+
 RUN     /usr/local/bin/python3.10 \
-            -m pip install \
-            git+git://github.com/tomharrop/tcdemux.git@0.0.1
+            -m pip install .
 
 ENTRYPOINT ["/usr/local/bin/tcdemux"]
