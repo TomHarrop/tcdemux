@@ -19,6 +19,21 @@ Demultiplex files and prepare reads for target capture pipeline.
 
 ![Snakemake rulegraph](assets/external_only_graph.svg)
 
+## Recommended installation
+
+Use the container hosted at [ghcr.io/tomharrop/tcdemux](https://ghcr.io/tomharrop/tcdemux)
+
+## Manual installation (not supported)
+
+1. install `bbmap` and make sure it's in your path
+2. `python3 -m pip install git+git://github.com/tomharrop/tcdemux.git`
+
+## Usage
+
+```bash
+FIXME
+```
+
 ## Configuration
 
 Ingest a csv with mandatory fields `name`, `i5_index`, `i7_index`, `r1_file`, `r2_file`.

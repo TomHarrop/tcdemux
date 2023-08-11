@@ -17,6 +17,10 @@ RUN     apt-get install -y  --no-install-recommends \
             bbmap \
             pigz
 
+RUN     /usr/local/bin/python3.10 \
+            -m pip install --upgrade \
+            pip setuptools wheel
+
 COPY    . /source
 
 RUN     /usr/local/bin/python3.10 \

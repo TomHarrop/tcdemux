@@ -30,6 +30,25 @@ With only external barcodes
 
    Snakemake rulegraph
 
+Recommended installation
+------------------------
+
+Use the container hosted at
+`ghcr.io/tomharrop/tcdemux <https://ghcr.io/tomharrop/tcdemux>`__
+
+Manual installation (not supported)
+-----------------------------------
+
+1. install ``bbmap`` and make sure it’s in your path
+2. ``python3 -m pip install git+git://github.com/tomharrop/tcdemux.git``
+
+Usage
+-----
+
+.. code:: bash
+
+   FIXME
+
 Configuration
 -------------
 
