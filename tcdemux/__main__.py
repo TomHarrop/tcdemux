@@ -14,7 +14,7 @@ import snakemake
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        prog='csdemux')
+        prog='tcdemux')
     parser.add_argument(
         '-n',
         help='Dry run',
