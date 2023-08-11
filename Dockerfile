@@ -2,7 +2,7 @@ FROM python:3.10.12
 
 LABEL SOFTWARE_NAME tcdemux
 LABEL MAINTAINER "Tom Harrop"
-LABEL version=0.0.0a
+LABEL version=0.0.1
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LC_ALL=C
@@ -19,6 +19,6 @@ RUN     apt-get install -y  --no-install-recommends \
 
 RUN     /usr/local/bin/python3.10 \
             -m pip install \
-            git+git://github.com/tomharrop/tcdemux.git
+            git+git://github.com/tomharrop/tcdemux.git@0.0.1
 
 ENTRYPOINT ["/usr/local/bin/tcdemux"]
