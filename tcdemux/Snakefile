@@ -4,9 +4,10 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from pathlib import Path
-import pandas as pd
-import tempfile
 import logging
+import pandas as pd
+import shutil
+import tempfile
 
 
 #############
@@ -469,7 +470,7 @@ for mypool in all_pools:
         params:
             pool = mypool
         script:
-            'src/write_barcode_file.py'
+            shutil.which('write_barcode_file.py')
 
 # check barcodes in pooled fastq files
 with tempfile.TemporaryDirectory() as rule_tmpdir:
