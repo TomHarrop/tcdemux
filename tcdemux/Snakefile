@@ -6,7 +6,7 @@ from Bio.SeqRecord import SeqRecord
 from pathlib import Path
 import pandas as pd
 import tempfile
-
+import logging
 
 def get_repair_input(wildcards):
     if samples_have_internal_barcodes:
@@ -78,24 +78,26 @@ def get_pool_files(wildcards):
     }
 
 
-# config
-sample_data_file = Path('data', 'samples.csv')
-# read_directory = Path('data', 'raw_data')
-read_directory = Path('data', 'test_data') # 1000 reads/file
-outdir = Path('output')
-logdir = Path(outdir, 'logs')
-keep_intermediate_files = False      # make this a cli option
-workingdir = outdir if keep_intermediate_files else tempfile.mkdtemp()
-adaptor_files = [
-    'data/adaptors/alicia_adapters.fa',
-    'data/adaptors/TruSeq3-PE-2.fa'
-        ]
-# adaptor references included with bbmap container
-adaptor_path = '/usr/local/opt/bbmap-39.01-1/resources/adapters.fa'
+# config from entrypoint
+sample_data_file = Path(config['sample_data_file'])
+read_directory = Path(config['read_directory'])
 
-# containers
-bbmap = 'docker://quay.io/biocontainers/bbmap:39.01--h92535d8_1'
-cutadapt = 'docker://quay.io/biocontainers/cutadapt:4.4--py310h4b81fae_1'
+adaptor_files = config['adaptor_files']
+
+outdir = Path(config['outdir'])
+logdir = Path(outdir, 'logs')
+
+mem_gb = config['mem_gb']
+max_threads = config['threads']
+
+# set up working direcory
+keep_intermediate_files = config['keep_intermediate_files']
+if keep_intermediate_files:
+    logging.info(f'Keeping intermediate files in {outdir}')
+    workingdir = outdir
+else:
+    workingdir = tempfile.mkdtemp()
+    logging.info(f'Using {workingdir} for intermediate files')
 
 # read the sample data and get a list of samples
 sample_data = pd.read_csv(
@@ -107,14 +109,18 @@ all_samples = sorted(set(sample_data.index))
 # Check for the pool_name field.
 # If the pool_name field is not present, we don't need to demultiplex internal
 # barcodes, we only need to check the external barcodes for errors.
-# Unfortunately that step is called demuxbyname.sh.
-# Could do this with a conditional in the target, which would make the subsequent
-# rules simpler.
+# This is done with with conditionals in the inputs
 samples_have_internal_barcodes = False
 all_pools = []
 if 'pool_name' in sample_data:
     samples_have_internal_barcodes = True
     all_pools = sorted(set(sample_data['pool_name']))
+    logging.info(f'Detected pool_name field in {sample_data_file}.')
+    logging.info('The following pools will be demuxed using internal barcodes:')
+    logging.info(f'{" ".join(all_pools)}')
+else:
+    logging.info(f'No pool_name field in {sample_data_file}.')
+    logging.info('Not attempting to demux by internal barcode.')
 
 
 rule target:
@@ -161,13 +167,14 @@ rule mask:
             'mask',
             '{sample}.log'
             ),
+    threads:
+            max(2, max_threads // len(all_pools))
     resources:
-        time = lambda wildcards, attempt: 10 * attempt
-    container:
-        bbmap
+        time = lambda wildcards, attempt: 10 * attempt,
+        mem_gb = max(mem_gb // len(all_samples), 8)
     shell:
         'bbduk.sh '
-        '-Xmx{resources.mem_mb}m '
+        '-Xmx{resources.mem_gb}g '
         'threads={threads} '
         'in={input.pipe} '
         'int=t '
@@ -198,13 +205,14 @@ rule mask_unpaired:
             'mask_unpaired',
             '{sample}.log'
             ),
+    threads:
+            max(2, max_threads // len(all_pools))
     resources:
-        time = lambda wildcards, attempt: 10 * attempt
-    container:
-        bbmap
+        time = lambda wildcards, attempt: 10 * attempt,
+        mem_gb = max(mem_gb // len(all_samples), 8)
     shell:
         'bbduk.sh '
-        '-Xmx{resources.mem_mb}m '
+        '-Xmx{resources.mem_gb}g '
         'threads={threads} '
         'in={input} '
         'int=f '
@@ -254,13 +262,14 @@ rule trim:
             'trim',
             '{sample}.log'
             )
+    threads:
+            min(12, (max_threads - 4) // len(all_pools))
     resources:
-        time = lambda wildcards, attempt: 10 * attempt
-    container:
-        bbmap
+        time = lambda wildcards, attempt: 10 * attempt,
+        mem_gb = max(mem_gb // len(all_samples), 8)
     shell:
         'bbduk.sh '
-        '-Xmx{resources.mem_mb}m '
+        '-Xmx{resources.mem_gb}g '
         'threads={threads} '
         'in={input.pipe} '
         'int=t '
@@ -294,13 +303,12 @@ rule combine_adaptors:
     threads:
         2
     resources:
-        time = lambda wildcards, attempt: 10 * attempt
-    container:
-        bbmap
+        time = lambda wildcards, attempt: 10 * attempt,
+        mem_gb = min(mem_gb, 8)
     shell:
-        'cat {input} {adaptor_path} | '
+        'cat {input} | '
         'dedupe.sh '
-        '-Xmx{resources.mem_mb}m '
+        '-Xmx{resources.mem_gb}g '
         'in=stdin.fasta '
         'out={output.adaptors} '
         'outd={output.duplicates} '
@@ -332,14 +340,15 @@ rule repair:
         Path(
             logdir,
             'repair',
-            '{sample}.log'),
+            '{sample}.log')
+    threads:
+        2
     resources:
-        time = lambda wildcards, attempt: 10 * attempt
-    container:
-        bbmap
+        time = lambda wildcards, attempt: 10 * attempt,
+        mem_gb = max(mem_gb // len(all_samples), 8)
     shell:
         'repair.sh '
-        '-Xmx{resources.mem_mb}m '
+        '-Xmx{resources.mem_gb}g '
         'in={input.r1} '
         'in2={input.r2} '
         'out=stdout.fastq '
@@ -398,9 +407,7 @@ for mypool in all_pools:
                 f'{mypool}.log'
                 )
         threads:
-            16
-        container:
-            cutadapt
+            max(2, max_threads // len(all_pools))
         shell:
             'cutadapt '
             '-j {threads} '
@@ -467,11 +474,9 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
                 '{pool}.log'
                 )
         threads:
-            5
+            max(12, max_threads // len(all_pools))
         resources:
-            mem_gb = 24
-        container:
-            bbmap
+            mem_gb = max(mem_gb // len(all_pools), 8)
         shell:
             'streams=$(( {threads}/2 )) ; '
             'mkdir -p {rule_tmpdir} ; '
@@ -534,11 +539,9 @@ with tempfile.TemporaryDirectory() as tmpdir:
                 '{sample}.log'
                 )
         threads:
-            5
+            max(5, max_threads // len(all_samples))
         resources:
-            mem_gb = 24
-        container:
-            bbmap
+            mem_gb = max(mem_gb // len(all_samples), 8)
         shell:
             'streams=$(( {threads}/2 )) ; '
             'demuxbyname.sh ' 

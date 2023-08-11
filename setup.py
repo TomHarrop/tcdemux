@@ -13,7 +13,7 @@ def readme():
 
 setup(
     name='tcdemux',
-    version='0.0.1',
+    version='0.0.0a0',
     description=(
         'python3 wrapper for demultiplexing '
         'target capture sequencing results'
@@ -23,9 +23,10 @@ setup(
     author='Tom Harrop',
     author_email='twharrop@gmail.com',
     license='GPL-3',
-    packages=find_packages(),
+    packages=find_packages('tcdemux'),
     install_requires=[
         'biopython>=1.81',
+        'cutadapt>=4.4',
         'pandas>=2.0.3',
         'snakemake>=7.31.0'
     ],
@@ -38,7 +39,7 @@ setup(
         'tcdemux/src/write_barcode_file.py',
     },
     package_data={
-        'csdemux': [
+        'tcdemux': [
             'Snakefile',
             'README.rst'
         ],
