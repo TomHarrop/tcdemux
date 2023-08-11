@@ -140,6 +140,22 @@ else:
     logging.info(f'No pool_name field in {sample_data_file}.')
     logging.info('Not attempting to demux by internal barcode.')
 
+# configure resources
+logging.info(f'{max_threads} threads provided.')
+logging.info(f'{mem_gb} GB RAM provided.')
+sample_threads = max(1, max_threads // len(all_samples))
+sample_ram = max(8, mem_gb // len(all_samples))
+logging.info(f'Using at least {sample_threads} threads per sample.')
+logging.info(f'Using at least {sample_ram} GB RAM per sample.')
+
+if samples_have_internal_barcodes:
+    pool_threads = max(1, max_threads // len(all_pools))
+    pool_ram = max(8, mem_gb // len(all_pools))
+    logging.info(f'Using at least {pool_threads} threads per pool.')
+    logging.info(f'Using at least {pool_ram} GB RAM per pool.')
+else:
+    pool_threads = 1
+    pool_ram = 8
 
 #########
 # RULES #
@@ -150,15 +166,14 @@ rule target:
         expand(
             Path(
                 outdir,
-                '050_processed-files',
-                '{sample}_r1.fastq.gz'
+                '{sample}_r{r}.fastq.gz'
                 ),
-            sample=all_samples
+            sample=all_samples,
+            r=[1, 2]
             ),
         expand(
             Path(
                 outdir,
-                '050_processed-files',
                 '{sample}.unpaired.fastq.gz'
                 ),
             sample=all_samples
@@ -175,12 +190,10 @@ rule mask:
     output:
         r1 = Path(
             outdir,
-            '050_processed-files',
             '{sample}_r1.fastq.gz'
             ),
         r2 = Path(
             outdir,
-            '050_processed-files',
             '{sample}_r2.fastq.gz'
             )
     log:
@@ -190,7 +203,7 @@ rule mask:
             '{sample}.log'
             ),
     threads:
-            max(2, max_threads // len(all_pools))
+        max(1, sample_threads)
     resources:
         time = lambda wildcards, attempt: 10 * attempt,
         mem_gb = max(mem_gb // len(all_samples), 8)
@@ -218,7 +231,6 @@ rule mask_unpaired:
     output:
         Path(
             outdir,
-            '050_processed-files',
             '{sample}.unpaired.fastq.gz'
             ),
     log:
@@ -228,10 +240,10 @@ rule mask_unpaired:
             '{sample}.log'
             ),
     threads:
-            max(2, max_threads // len(all_pools))
+        max(2, sample_threads)    
     resources:
         time = lambda wildcards, attempt: 10 * attempt,
-        mem_gb = max(mem_gb // len(all_samples), 8)
+        mem_gb = max(sample_ram, 8)
     shell:
         'bbduk.sh '
         '-Xmx{resources.mem_gb}g '
@@ -278,6 +290,9 @@ rule trim:
             '040_trim',
             '{sample}.stats'
             )
+    params:
+        ft = lambda wildcards:
+            '' if samples_have_internal_barcodes else 'forcetrimmod=5'
     log:
         Path(
             logdir,
@@ -285,10 +300,10 @@ rule trim:
             '{sample}.log'
             )
     threads:
-            min(12, (max_threads - 4) // len(all_pools))
+        max(2, sample_threads - 3)    
     resources:
         time = lambda wildcards, attempt: 10 * attempt,
-        mem_gb = max(mem_gb // len(all_samples), 8)
+        mem_gb = max(sample_ram, 8)
     shell:
         'bbduk.sh '
         '-Xmx{resources.mem_gb}g '
@@ -299,7 +314,7 @@ rule trim:
         'outs={output.unpaired} '
         'ref={input.adaptors} '
         'ktrim=r k=23 mink=11 hdist=1 tpe tbo '
-        'forcetrimmod=5 '
+        '{params.ft} '
         'stats={output.stats} '
         '>> {output.pipe} '
         '2> {log} '
@@ -326,7 +341,7 @@ rule combine_adaptors:
         2
     resources:
         time = lambda wildcards, attempt: 10 * attempt,
-        mem_gb = min(mem_gb, 8)
+        mem_gb = 4
     shell:
         'cat {input} | '
         'dedupe.sh '
@@ -428,7 +443,7 @@ for mypool in all_pools:
                 f'{mypool}.log'
                 )
         threads:
-            max(2, max_threads // len(all_pools))
+            max(2, sample_threads)
         shell:
             'cutadapt '
             '-j {threads} '
@@ -495,9 +510,9 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
                 '{pool}.log'
                 )
         threads:
-            max(12, max_threads // len(all_pools))
+            max(5, pool_threads)
         resources:
-            mem_gb = max(mem_gb // len(all_pools), 8)
+            mem_gb = max(8, pool_ram)
         shell:
             'streams=$(( {threads}/2 )) ; '
             'mkdir -p {rule_tmpdir} ; '
@@ -559,9 +574,9 @@ with tempfile.TemporaryDirectory() as tmpdir:
                 '{sample}.log'
                 )
         threads:
-            max(5, max_threads // len(all_samples))
+            max(5, sample_threads)
         resources:
-            mem_gb = max(mem_gb // len(all_samples), 8)
+            mem_gb = max(8, sample_ram)
         shell:
             'streams=$(( {threads}/2 )) ; '
             'demuxbyname.sh ' 
