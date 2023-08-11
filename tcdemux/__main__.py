@@ -103,4 +103,5 @@ def main():
         resources={'mem_gb': args['mem_gb']},
         printshellcmds=True,
         dryrun=True if args['dry_run'] else False,
-        restart_times=args['restart_times'])
+        restart_times=args['restart_times'],
+        lock=False)
