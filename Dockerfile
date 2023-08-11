@@ -26,6 +26,4 @@ COPY    . /tcdemux
 RUN     /usr/local/bin/python3 \
             -m pip install /tcdemux
 
-RUN     ls -lhrt /usr/local/lib/python3.10/site-packages
-
 ENTRYPOINT ["/usr/local/bin/tcdemux"]
