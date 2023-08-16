@@ -19,26 +19,65 @@ Demultiplex files and prepare reads for target capture pipeline.
 
 ![Snakemake rulegraph](assets/external_only_graph.svg)
 
-## Recommended installation
+## Installation
 
 Use the container hosted at [ghcr.io/tomharrop/tcdemux](https://ghcr.io/tomharrop/tcdemux)
 
-## Manual installation (not supported)
+## Manual installation
+
+Manual installation is not supported, but it should be straightforward if 
 
 1. install `bbmap` and make sure it's in your path
 2. `python3 -m pip install git+git://github.com/tomharrop/tcdemux.git`
 
 ## Usage
 
-```bash
-FIXME
+### External barcodes only
+
+You need to provide a csv file with mandatory fields `name`, `i5_index`, `i7_index`, `r1_file`, `r2_file`.
+
+```csv
+pool_name,i5_index,i7_index,name,internal_index_sequence,r1_file,r2_file
+AG_P8P1C,AGCGCTAG,CCGCGGTT,134486_LibID134586_GAP_BRF_H5TT7DRX3_CCGCGGTT-CTAGCGCT_S10_L002,GTGACATC,AG_P8P1C_S97_L002_R1_001.fastq,AG_P8P1C_S97_L002_R2_001.fastq
 ```
 
-## Configuration
+Provide the csv to `tcdemux` using the `--sample_data` argument.
 
-Ingest a csv with mandatory fields `name`, `i5_index`, `i7_index`, `r1_file`, `r2_file`.
+### Additional, internal barcodes
 
-If the csv also has the `pool_name` field, demuxing by internal index sequence will happen. This also requires the `internal_index_sequence` field.
+If the csv also has a `pool_name` field, demuxing by internal index sequence will happen.
+This also requires `internal_index_sequence` field in the csv.
+
+### Other options
+
+You also need to provide paths to the raw read directory and an output directory, and at least one adaptor file for trimming.
+
+If you want to keep the intermediate files, pass the `--keep_intermediate_files` argument.
+
+###
+
+```bash
+usage: tcdemux [-h] [-n] [--threads int] [--mem_gb int] [--restart_times RESTART_TIMES]
+               --sample_data SAMPLE_DATA_FILE --read_directory READ_DIRECTORY --adaptors
+               ADAPTOR_FILES [ADAPTOR_FILES ...] --outdir OUTDIR
+               [--keep_intermediate_files | --no-keep_intermediate_files]
+
+options:
+  -h, --help            show this help message and exit
+  -n                    Dry run
+  --threads int         Number of threads.
+  --mem_gb int          Amount of RAM in GB.
+  --restart_times RESTART_TIMES
+                        number of times to restart failing jobs (default 0)
+  --sample_data SAMPLE_DATA_FILE
+                        Sample csv (see README)
+  --read_directory READ_DIRECTORY
+                        Directory containing the read files
+  --adaptors ADAPTOR_FILES [ADAPTOR_FILES ...]
+                        FASTA file(s) of adaptors. Multiple adaptor files can be used.
+  --outdir OUTDIR       Output directory
+  --keep_intermediate_files, --no-keep_intermediate_files
+```
 
 ## Overview
 
