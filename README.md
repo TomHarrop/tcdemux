@@ -3,8 +3,8 @@
 Demultiplex files and prepare reads for target capture pipeline.
 
 1. Either:
-   a. Check external barcodes, then demux by internal barcode, or
-   b. Check external barcodes only
+   - Check external barcodes, then demux by internal barcode, or
+   - Check external barcodes only
 3. Verify pairing
 4. Trim adaptors
 5. Mask low-complexity regions
