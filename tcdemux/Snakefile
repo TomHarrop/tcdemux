@@ -64,6 +64,10 @@ def get_sample_files(wildcards):
     }
 
 
+# NOTE! Check how the external barcodes have been represented in the metadata.
+# For example, in one set of metadata where the i5 index is listed as AGCGCTAG
+# and the i7 index is listed as CCGCGGTT, the reads show up with headers like
+# this: CCGCGGTT+CTAGCGCT. So the i5 index has to be reverse complemented.
 def get_pool_barcode_seq(wildcards):
     pool = wildcards.pool
     pool_data = sample_data[
@@ -397,6 +401,21 @@ rule repair:
         '2> {log}'
 
 # demux using cutadapt
+
+# NOTE! I think the most straightforward way to do this is using cutadapt's
+# [paired adaptor demultiplex mode]
+# (https://cutadapt.readthedocs.io/en/stable/guide.html#unique-dual-indices)
+# (so that both reads are checked). Alternatively, I could use cutadapt's
+# [regular demultiplexing mode]
+# (https://cutadapt.readthedocs.io/en/stable/guide.html#demultiplexing),
+# although this would only check the first read:
+# "Paired-end demultiplexing always uses the adapter matches of the first read to
+#  decide where a read should be written. If adapters for read 2 are given
+#  (-A/-G), they are detected and removed as normal, but these matches do not
+#  influence where the read pair is written"
+# Eventually it may be better to use multiple combinatorial adaptor mode to be
+# safe.
+
 for mypool in all_pools:
     pool_sd = sample_data[sample_data['pool_name'] == mypool]
     pool_samples = sorted(set(pool_sd.index))
