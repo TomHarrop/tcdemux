@@ -19,7 +19,7 @@ apptainer exec \
     tcdemux
 ```
 
-## Manual installation
+### Manual installation
 
 Manual installation is not supported, but if you need to do it, you can follow these steps:
 
@@ -40,12 +40,10 @@ AGCGCTAG,CCGCGGTT,sample1,sample1_r1.fastq,sample1_r2.fastq
 GAACATAC,GCTTGTCA,sample2,sample2_r1.fastq,sample2_r2.fastq
 ```
 
-`tcdemux` will process the `sample1` and `sample2` r1 and r2 files separately, resulting in output files called `sample1_r1.fastq.gz`, `sample1_r2.fastq.gz` and `sample1.unpaired.fastq.gz`, and the same for sample2.
+`tcdemux` will process the sample1 and sample2 r1 and r2 files separately, resulting in output files called *sample1_r1.fastq.gz*, *sample1_r2.fastq.gz* and *sample1.unpaired.fastq.gz*, and the same for sample2.
 
 `tcdemux` does not demultiplex the samples in this case.
 The external barcodes are checked for errors before trimming and masking.
-Checking barcodes is necessary because barcode errors are sometimes allowed in the Illumina workflow.
-**`tcdemux` does not allow barcode errors.**
 You can check if your fastq files have barcode errors like this:
 
 ```bash
@@ -56,8 +54,9 @@ grep '^@' path/to/file.fastq \
     | uniq -c
 ```
 
-If you see more than one barcode, then barcode errors were allowed.
-Reads with barcode errors will be discarded by `tcdemux`.
+If you see more than one barcode, then barcode errors were allowed in the Illumina workflow.
+**`tcdemux` does not allow barcode errors**.
+Reads with barcode errors are discarded.
 
 ### Additional, internal barcodes
 
