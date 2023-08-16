@@ -47,6 +47,7 @@ This will cause the `sample1` and `sample2` r1 and r2 files to be processed sepa
 `tcdemux` does not need to demultiplex the samples in this case.
 The external barcodes are checked for errors before trimming and masking.
 Checking barcodes is necessary because barcode errors are sometimes allowed in the Illumina workflow.
+**`tcdemux` does not allow barcode errors.**
 You can check if your fastq files have barcode errors as follows:
 
 ```bash
@@ -56,8 +57,6 @@ grep '^@' /path/to/file.fastq \
     | sort \
     | uniq -c
 ```
-
-**`tcdemux` does not allow barcode errors.**
 
 ### Additional, internal barcodes
 
