@@ -208,10 +208,10 @@ rule mask:
             '{sample}.log'
             ),
     threads:
-        max(1, sample_threads)
+        1
     resources:
         time = lambda wildcards, attempt: 10 * attempt,
-        mem_gb = max(mem_gb // len(all_samples), 8)
+        mem_gb = lambda wildcards, attempt: 1 * attempt,
     shell:
         'bbduk.sh '
         '-Xmx{resources.mem_gb}g '
@@ -245,10 +245,10 @@ rule mask_unpaired:
             '{sample}.log'
             ),
     threads:
-        max(2, sample_threads)    
+        1
     resources:
         time = lambda wildcards, attempt: 10 * attempt,
-        mem_gb = max(sample_ram, 8)
+        mem_gb = lambda wildcards, attempt: 1 * attempt,
     shell:
         'bbduk.sh '
         '-Xmx{resources.mem_gb}g '
@@ -283,7 +283,7 @@ rule trim:
             '{sample}.paired.fastq'
             )
             ),
-        unpaired = temp(
+        unpaired = pipe(
             Path(
             workingdir,
             '040_trim',
@@ -305,10 +305,10 @@ rule trim:
             '{sample}.log'
             )
     threads:
-        max(2, sample_threads - 3)    
+        max(4, sample_threads - 3)    
     resources:
         time = lambda wildcards, attempt: 10 * attempt,
-        mem_gb = max(sample_ram, 8)
+        mem_gb = lambda wildcards, attempt: 2 * attempt,
     shell:
         'bbduk.sh '
         '-Xmx{resources.mem_gb}g '
@@ -323,6 +323,42 @@ rule trim:
         'stats={output.stats} '
         '>> {output.pipe} '
         '2> {log} '
+
+# double check pairing
+rule repair:
+    input:
+        unpack(get_repair_input)
+    output:
+        pipe(
+            Path(
+            workingdir,
+            '030_repair',
+            '{sample}.fastq'
+            )
+            )
+    log:
+        Path(
+            logdir,
+            'repair',
+            '{sample}.log')
+    threads:
+        1
+    resources:
+        time = lambda wildcards, attempt: 10 * attempt,
+        mem_gb = max(mem_gb // len(all_samples), 8)
+    shell:
+        'repair.sh '
+        '-Xmx{resources.mem_gb}g '
+        'in={input.r1} '
+        'in2={input.r2} '
+        'out=stdout.fastq '
+        'outs=/dev/null '
+        'repair=t '
+        'tossbrokenreads=t '
+        'tossjunk=t '
+        '>> {output} '
+        '2> {log}'
+
 
 rule combine_adaptors:
     input:
@@ -365,43 +401,7 @@ rule combine_adaptors:
         'uniquenames=t '
         '2> {log} '
 
-# double check pairing
-rule repair:
-    input:
-        unpack(get_repair_input)
-    output:
-        pipe(
-            Path(
-            workingdir,
-            '030_repair',
-            '{sample}.fastq'
-            )
-            )
-    log:
-        Path(
-            logdir,
-            'repair',
-            '{sample}.log')
-    threads:
-        2
-    resources:
-        time = lambda wildcards, attempt: 10 * attempt,
-        mem_gb = max(mem_gb // len(all_samples), 8)
-    shell:
-        'repair.sh '
-        '-Xmx{resources.mem_gb}g '
-        'in={input.r1} '
-        'in2={input.r2} '
-        'out=stdout.fastq '
-        'outs=/dev/null '
-        'repair=t '
-        'tossbrokenreads=t '
-        'tossjunk=t '
-        '>> {output} '
-        '2> {log}'
-
 # demux using cutadapt
-
 # NOTE! I think the most straightforward way to do this is using cutadapt's
 # [paired adaptor demultiplex mode]
 # (https://cutadapt.readthedocs.io/en/stable/guide.html#unique-dual-indices)
