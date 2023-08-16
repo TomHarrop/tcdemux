@@ -30,11 +30,9 @@ Manual installation is not supported, but if you need to do it, you can follow t
 
 ### External barcodes only
 
-`tcdemux` requires a csv file with the fields `name`, `i5_index`, `i7_index`, `r1_file`, and `r2_file`.
+`tcdemux` requires a sample_data file in csv format with the fields `name`, `i5_index`, `i7_index`, `r1_file`, and `r2_file`. **Provide the csv to `tcdemux` using the `--sample_data` argument**.
 
-Provide the csv to `tcdemux` using the `--sample_data` argument.
-
-Here's an example:
+Here's an example sample_data file:
 
 ```csv
 i5_index,i7_index,name,r1_file,r2_file
@@ -42,28 +40,31 @@ AGCGCTAG,CCGCGGTT,sample1,sample1_r1.fastq,sample1_r2.fastq
 GAACATAC,GCTTGTCA,sample2,sample2_r1.fastq,sample2_r2.fastq
 ```
 
-This will cause the `sample1` and `sample2` r1 and r2 files to be processed separately, resulting in output files called `sample1_r1.fastq.gz`, `sample1_r2.fastq.gz` and `sample1.unpaired.fastq.gz`, and the same for sample2.
+`tcdemux` will process the `sample1` and `sample2` r1 and r2 files separately, resulting in output files called `sample1_r1.fastq.gz`, `sample1_r2.fastq.gz` and `sample1.unpaired.fastq.gz`, and the same for sample2.
 
-`tcdemux` does not need to demultiplex the samples in this case.
+`tcdemux` does not demultiplex the samples in this case.
 The external barcodes are checked for errors before trimming and masking.
 Checking barcodes is necessary because barcode errors are sometimes allowed in the Illumina workflow.
 **`tcdemux` does not allow barcode errors.**
-You can check if your fastq files have barcode errors as follows:
+You can check if your fastq files have barcode errors like this:
 
 ```bash
-grep '^@' /path/to/file.fastq \
+grep '^@' path/to/file.fastq \
     | head -n 1000 \
     | cut -d':' -f10 \
     | sort \
     | uniq -c
 ```
 
+If you see more than one barcode, then barcode errors were allowed.
+Reads with barcode errors will be discarded by `tcdemux`.
+
 ### Additional, internal barcodes
 
-If the csv also has a `pool_name` field, `tcdemux` will demultiplex the pools by internal index sequence.
-This also requires `internal_index_sequence` field in the csv.
+If the sample_data file also has a `pool_name` field, `tcdemux` will demultiplex the pools by internal index sequence.
+This also requires the `internal_index_sequence` field in the csv.
 
-Here's an example:
+Here's an example sample_data file:
 
 ```csv
 pool_name,i5_index,i7_index,name,internal_index_sequence,r1_file,r2_file
@@ -80,7 +81,6 @@ You also need to provide paths to the raw read directory and an output directory
 
 If you want to keep the intermediate files, pass the `--keep_intermediate_files` argument.
 
-###  
 
 ```bash
 usage: tcdemux [-h] [-n] [--threads int] [--mem_gb int] [--restart_times RESTART_TIMES]
