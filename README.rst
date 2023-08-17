@@ -22,7 +22,7 @@ Docker or Apptainer/Singularity, *e.g.*:
 .. code:: bash
 
    apptainer exec \
-       docker://ghcr.io/tomharrop/tcdemux:0.0.5 \
+       docker://ghcr.io/tomharrop/tcdemux:0.0.7 \
        tcdemux
 
 Manual installation
@@ -101,6 +101,10 @@ directory, and at least one adaptor file for trimming.
 
 If you want to keep the intermediate files, pass the
 ``--keep_intermediate_files`` argument.
+
+The pipeline uses 5 threads and about 8 GB of RAM per sample. Provide
+multiples of these using the :literal:`--threads`\` and`–mem_gb\`
+arguments.
 
 .. code:: bash
 

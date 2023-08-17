@@ -11,8 +11,8 @@ pool_test/134567_LibID134667_GAP_BRF_H5TT7DRX3_CCGCGGTT-CTAGCGCT_S7_L002_r1.fast
 	--adaptors data/adaptors/alicia_adapters.fa data/adaptors/TruSeq3-PE-2.fa data/adaptors/bbmap_39.01_adaptors.fa \
 	--outdir pool_test \
 	--read_directory data/test_data \
-	--threads 11 \
-	--mem_gb 48
+	--threads 10 \
+	--mem_gb 16 
 
 nopool_test/134567_LibID134667_GAP_BRF_H5TT7DRX3_CCGCGGTT-CTAGCGCT_S7_L002_r1.fastq.gz:
 	tcdemux \
@@ -20,5 +20,5 @@ nopool_test/134567_LibID134667_GAP_BRF_H5TT7DRX3_CCGCGGTT-CTAGCGCT_S7_L002_r1.fa
 	--adaptors data/adaptors/alicia_adapters.fa data/adaptors/TruSeq3-PE-2.fa data/adaptors/bbmap_39.01_adaptors.fa \
 	--outdir nopool_test \
 	--read_directory data/test_data \
-	--threads 11 \
-	--mem_gb 48
+	--threads 10 \
+	--mem_gb 16

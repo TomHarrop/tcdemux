@@ -15,7 +15,7 @@ Use the container hosted at [ghcr.io/tomharrop/tcdemux](https://ghcr.io/tomharro
 
 ```bash
 apptainer exec \
-    docker://ghcr.io/tomharrop/tcdemux:0.0.5 \
+    docker://ghcr.io/tomharrop/tcdemux:0.0.7 \
     tcdemux
 ```
 
@@ -79,6 +79,9 @@ In this case, sample1 and sample2 are multiplexed in pool1 with internal barcode
 You also need to provide paths to the raw read directory and an output directory, and at least one adaptor file for trimming.
 
 If you want to keep the intermediate files, pass the `--keep_intermediate_files` argument.
+
+The pipeline uses 5 threads and about 8 GB of RAM per sample.
+Provide multiples of these using the `--threads`` and `--mem_gb` arguments.
 
 
 ```bash

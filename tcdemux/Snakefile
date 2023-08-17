@@ -104,6 +104,7 @@ adaptor_files = config['adaptor_files']
 
 outdir = Path(config['outdir'])
 logdir = Path(outdir, 'logs')
+statdir = Path(outdir, 'stats')
 
 mem_gb = config['mem_gb']
 max_threads = config['threads']
@@ -117,7 +118,7 @@ keep_intermediate_files = config['keep_intermediate_files']
 # set up working direcory
 if keep_intermediate_files:
     logging.info(f'Keeping intermediate files in {outdir}')
-    workingdir = outdir
+    workingdir = Path(outdir, 'intermediate_files')
 else:
     workingdir = tempfile.mkdtemp()
     logging.info(f'Using {workingdir} for intermediate files')
@@ -149,7 +150,7 @@ else:
 logging.info(f'{max_threads} threads provided.')
 logging.info(f'{mem_gb} GB RAM provided.')
 sample_threads = max(1, max_threads // len(all_samples))
-sample_ram = max(8, mem_gb // len(all_samples))
+sample_ram = max(4, mem_gb // len(all_samples))
 logging.info(f'Using at least {sample_threads} threads per sample.')
 logging.info(f'Using at least {sample_ram} GB RAM per sample.')
 
@@ -159,8 +160,8 @@ if samples_have_internal_barcodes:
     logging.info(f'Using at least {pool_threads} threads per pool.')
     logging.info(f'Using at least {pool_ram} GB RAM per pool.')
 else:
-    pool_threads = 1
-    pool_ram = 8
+    pool_threads = sample_threads
+    pool_ram = sample_ram
 
 #########
 # RULES #
@@ -200,6 +201,11 @@ rule mask:
         r2 = Path(
             outdir,
             '{sample}_r2.fastq.gz'
+            ),
+        stats = Path(
+            statdir,
+            'mask',
+            '{sample}.txt'
             )
     log:
         Path(
@@ -224,6 +230,7 @@ rule mask:
         'entropy=0.8 '
         'entropywindow=20 '
         'entropymask=t '
+        'stats={output.stats} '
         '2> {log} '
 
 rule mask_unpaired:
@@ -234,10 +241,15 @@ rule mask_unpaired:
             '{sample}.unpaired.fastq'
             )
     output:
-        Path(
+        fq = Path(
             outdir,
             '{sample}.unpaired.fastq.gz'
             ),
+        stats = Path(
+            statdir,
+            'mask',
+            '{sample}.unpaired.txt'
+            )
     log:
         Path(
             logdir,
@@ -255,11 +267,12 @@ rule mask_unpaired:
         'threads={threads} '
         'in={input} '
         'int=f '
-        'out={output} '
+        'out={output.fq} '
         'zl=9 '
         'entropy=0.8 '
         'entropywindow=20 '
         'entropymask=t '
+        'stats={output.stats} '
         '2> {log} '
 
 # trim adaptors
@@ -271,8 +284,7 @@ rule trim:
             '{sample}.fastq'
             ),
         adaptors = Path(
-            outdir, 
-            '040_trim',
+            workingdir, 
             'adaptors.fasta'
             ),
     output:
@@ -291,9 +303,9 @@ rule trim:
             )
             ),
         stats = Path(
-            outdir,
-            '040_trim',
-            '{sample}.stats'
+            statdir,
+            'trim',
+            '{sample}.txt'
             )
     params:
         ft = lambda wildcards:
@@ -305,7 +317,7 @@ rule trim:
             '{sample}.log'
             )
     threads:
-        max(4, sample_threads - 3)    
+        2
     resources:
         time = lambda wildcards, attempt: 10 * attempt,
         mem_gb = lambda wildcards, attempt: 2 * attempt,
@@ -345,7 +357,7 @@ rule repair:
         1
     resources:
         time = lambda wildcards, attempt: 10 * attempt,
-        mem_gb = max(mem_gb // len(all_samples), 8)
+        mem_gb = lambda wildcards, attempt: 4 * attempt,
     shell:
         'repair.sh '
         '-Xmx{resources.mem_gb}g '
@@ -365,13 +377,11 @@ rule combine_adaptors:
         adaptor_files
     output:
         adaptors = Path(
-            outdir, 
-            '040_trim',
+            workingdir, 
             'adaptors.fasta'
             ),
         duplicates = Path(
-            outdir, 
-            '040_trim',
+            statdir, 
             'duplicated_adaptors.fasta'
             )
     log:
@@ -379,7 +389,7 @@ rule combine_adaptors:
             logdir,
             'combine_adaptors.log')
     threads:
-        2
+        1
     resources:
         time = lambda wildcards, attempt: 10 * attempt,
         mem_gb = 4
@@ -463,7 +473,7 @@ for mypool in all_pools:
                 f'{mypool}.log'
                 )
         threads:
-            max(2, sample_threads)
+            max(2, pool_threads)
         shell:
             'cutadapt '
             '-j {threads} '
@@ -508,9 +518,9 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
                 '{pool}_r2.fastq'
                 ),
             stats = Path(
-                outdir,
-                '010_barcode-check',
-                '{pool}.demux_stats.txt'
+                statdir,
+                'check_pool_barcodes',
+                '{pool}.txt'
                 ),
         params:
             barcode_seq = lambda wildcards:
@@ -572,9 +582,9 @@ with tempfile.TemporaryDirectory() as tmpdir:
                 '{sample}_r2.fastq'
                 ),
             stats = Path(
-                outdir,
-                '010_barcode-check',
-                '{sample}.demux_stats.txt'
+                statdir,
+                'check_sample_barcodes',
+                '{sample}.txt'
                 ),
         params:
             barcode_seq = lambda wildcards:
