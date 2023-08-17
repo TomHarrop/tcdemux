@@ -15,7 +15,7 @@ Use the container hosted at [ghcr.io/tomharrop/tcdemux](https://ghcr.io/tomharro
 
 ```bash
 apptainer exec \
-    docker://ghcr.io/tomharrop/tcdemux:0.0.5 \
+    docker://ghcr.io/tomharrop/tcdemux:0.0.7 \
     tcdemux
 ```
 

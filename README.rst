@@ -22,7 +22,7 @@ Docker or Apptainer/Singularity, *e.g.*:
 .. code:: bash
 
    apptainer exec \
-       docker://ghcr.io/tomharrop/tcdemux:0.0.5 \
+       docker://ghcr.io/tomharrop/tcdemux:0.0.7 \
        tcdemux
 
 Manual installation
