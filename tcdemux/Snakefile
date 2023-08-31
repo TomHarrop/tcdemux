@@ -532,7 +532,10 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
             out2 = Path(
                 rule_tmpdir,
                 '%_r2.fastq'
-                ).as_posix()
+                ).as_posix(),
+            mem_gb = lambda wildcards, resources:
+                int(resources.mem_gb * 0.8),
+            streams = 2
         log:
             Path(
                 logdir,
@@ -544,7 +547,6 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
         resources:
             mem_gb = max(8, pool_ram)
         shell:
-            'streams=$(( {threads}/2 )) ; '
             'mkdir -p {rule_tmpdir} ; '
             'demuxbyname.sh ' 
             'delimiter=: prefixmode=f ' # use the last column
@@ -555,8 +557,9 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
             'stats={output.stats} '
             'in={input.r1} '
             'in2={input.r2} '
-            'streams=$streams '
-            '-Xmx{resources.mem_gb}g '
+            'streams={params.streams} '
+            'threads={threads} '
+            '-Xmx{params.mem_gb}g '
             '2> {log} '
             '&& '
             'mv {rule_tmpdir}/{params.barcode_seq}_r1.fastq '
@@ -596,7 +599,10 @@ with tempfile.TemporaryDirectory() as tmpdir:
             out2 = Path(
                 tmpdir,
                 '%_r2.fastq'
-                ).as_posix()
+                ).as_posix(),
+            mem_gb = lambda wildcards, resources:
+                int(resources.mem_gb * 0.8),
+            streams = 2
         log:
             Path(
                 logdir,
@@ -608,7 +614,6 @@ with tempfile.TemporaryDirectory() as tmpdir:
         resources:
             mem_gb = max(8, sample_ram)
         shell:
-            'streams=$(( {threads}/2 )) ; '
             'demuxbyname.sh ' 
             'delimiter=: prefixmode=f ' # use the last column
             'names={params.barcode_seq} '
@@ -618,8 +623,9 @@ with tempfile.TemporaryDirectory() as tmpdir:
             'stats={output.stats} '
             'in={input.r1} '
             'in2={input.r2} '
-            'streams=$streams '
-            '-Xmx{resources.mem_gb}g '
+            'streams={params.streams} '
+            'threads={threads} '
+            '-Xmx{params.mem_gb}g '
             '2> {log} '
             '&& '
             'mv {tmpdir}/{params.barcode_seq}_r1.fastq '
