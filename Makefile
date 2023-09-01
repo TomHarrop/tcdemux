@@ -12,7 +12,7 @@ pool_test/134567_LibID134667_GAP_BRF_H5TT7DRX3_CCGCGGTT-CTAGCGCT_S7_L002_r1.fast
 	--outdir pool_test \
 	--read_directory data/test_data \
 	--threads 10 \
-	--mem_gb 16 
+	--mem_gb 16 \
 
 nopool_test/134567_LibID134667_GAP_BRF_H5TT7DRX3_CCGCGGTT-CTAGCGCT_S7_L002_r1.fastq.gz:
 	tcdemux \
