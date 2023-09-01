@@ -535,7 +535,7 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
                 '%_r2.fastq'
                 ).as_posix(),
             mem_gb = lambda wildcards, resources:
-                int(resources.mem_gb - 2),
+                int((resources.mem_gb - 2) // 2),
             streams = 2
         log:
             Path(
@@ -546,8 +546,7 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
         threads:
             2
         resources:
-            mem_gb = 8,
-            load = 100
+            mem_gb = 8
         shell:
             'mkdir -p {rule_tmpdir} ; '
             'demuxbyname.sh ' 
@@ -604,7 +603,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
                 '%_r2.fastq'
                 ).as_posix(),
             mem_gb = lambda wildcards, resources:
-                int(resources.mem_gb - 2),
+                int((resources.mem_gb - 2) // 2),
             streams = 2
         log:
             Path(
@@ -615,8 +614,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
         threads:
             2
         resources:
-            mem_gb = 8,
-            load = 100
+            mem_gb = 8
         shell:
             'demuxbyname.sh ' 
             'delimiter=: prefixmode=f ' # use the last column

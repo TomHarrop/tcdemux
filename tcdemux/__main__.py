@@ -97,8 +97,7 @@ def main():
 
     # define resources
     smk_resources = {
-        'mem_gb': args['mem_gb'],
-        'load': 100
+        'mem_gb': args['mem_gb']
         }
 
     # run the pipeline
