@@ -95,12 +95,18 @@ def main():
     args = parse_arguments()
     logging.debug(f'Entrypoint args\n{args}')
 
+    # define resources
+    smk_resources = {
+        'mem_gb': args['mem_gb'],
+        'load': 100
+        }
+
     # run the pipeline
     snakemake.snakemake(
         snakefile=snakefile,
         config=args,
         cores=args['threads'],
-        resources={'mem_gb': args['mem_gb']},
+        resources=smk_resources,
         printshellcmds=True,
         dryrun=True if args['dry_run'] else False,
         restart_times=args['restart_times'],

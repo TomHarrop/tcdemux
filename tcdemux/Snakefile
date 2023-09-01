@@ -111,6 +111,7 @@ max_threads = config['threads']
 
 keep_intermediate_files = config['keep_intermediate_files']
 
+
 ########
 # MAIN #
 ########
@@ -534,7 +535,7 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
                 '%_r2.fastq'
                 ).as_posix(),
             mem_gb = lambda wildcards, resources:
-                int(resources.mem_gb * 0.8),
+                int(resources.mem_gb - 2),
             streams = 2
         log:
             Path(
@@ -543,9 +544,10 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
                 '{pool}.log'
                 )
         threads:
-            max(5, pool_threads)
+            2
         resources:
-            mem_gb = max(8, pool_ram)
+            mem_gb = 8,
+            load = 100
         shell:
             'mkdir -p {rule_tmpdir} ; '
             'demuxbyname.sh ' 
@@ -560,6 +562,7 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
             'streams={params.streams} '
             'threads={threads} '
             '-Xmx{params.mem_gb}g '
+            '-Xms100m '
             '2> {log} '
             '&& '
             'mv {rule_tmpdir}/{params.barcode_seq}_r1.fastq '
@@ -601,7 +604,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
                 '%_r2.fastq'
                 ).as_posix(),
             mem_gb = lambda wildcards, resources:
-                int(resources.mem_gb * 0.8),
+                int(resources.mem_gb - 2),
             streams = 2
         log:
             Path(
@@ -610,9 +613,10 @@ with tempfile.TemporaryDirectory() as tmpdir:
                 '{sample}.log'
                 )
         threads:
-            max(5, sample_threads)
+            2
         resources:
-            mem_gb = max(8, sample_ram)
+            mem_gb = 8,
+            load = 100
         shell:
             'demuxbyname.sh ' 
             'delimiter=: prefixmode=f ' # use the last column
@@ -626,6 +630,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
             'streams={params.streams} '
             'threads={threads} '
             '-Xmx{params.mem_gb}g '
+            '-Xms100m '
             '2> {log} '
             '&& '
             'mv {tmpdir}/{params.barcode_seq}_r1.fastq '
