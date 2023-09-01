@@ -23,9 +23,9 @@ nopool_test/134567_LibID134667_GAP_BRF_H5TT7DRX3_CCGCGGTT-CTAGCGCT_S7_L002_r1.fa
 	--threads 10 \
 	--mem_gb 16
 
-insane:
+dirty:
 	tcdemux \
-	--sample_data data/insane_samples.csv \
+	--sample_data data/dirty_samples.csv \
 	--adaptors data/adaptors/alicia_adapters.fa data/adaptors/TruSeq3-PE-2.fa data/adaptors/bbmap_39.01_adaptors.fa \
 	--outdir insane_test \
 	--read_directory data/test_data \
