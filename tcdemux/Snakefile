@@ -6,6 +6,7 @@ from Bio.SeqRecord import SeqRecord
 from pathlib import Path
 import logging
 import pandas as pd
+import re
 import shutil
 import tempfile
 
@@ -92,6 +93,11 @@ def get_pool_files(wildcards):
     }
 
 
+def sample_name_sanitiser(sample_name):
+    if re.compile('[^a-zA-Z0-9_-]').search(sample_name):
+        raise ValueError(f'{sample_name} contains special character(s)')
+
+
 ###########
 # GLOBALS #
 ###########
@@ -130,6 +136,11 @@ sample_data = pd.read_csv(
     index_col='name')
 
 all_samples = sorted(set(sample_data.index))
+
+# make sure there are no special characters
+for sample in all_samples:
+    sample_name_sanitiser(sample)
+    logging.debug(f'sample {sample} appears sane')
 
 # Check for the pool_name field.
 # If the pool_name field is not present, we don't need to demultiplex internal
