@@ -349,6 +349,9 @@ rule repair:
             '{sample}.fastq'
             )
             )
+    params:
+        mem_gb = lambda wildcards, resources:
+                int(resources.mem_gb - 2),
     log:
         Path(
             logdir,
@@ -361,7 +364,8 @@ rule repair:
         mem_gb = lambda wildcards, attempt: 4 * attempt,
     shell:
         'repair.sh '
-        '-Xmx{resources.mem_gb}g '
+        '-Xmx{params.mem_gb}g '
+        '-Xms100m '
         'in={input.r1} '
         'in2={input.r2} '
         'out=stdout.fastq '
