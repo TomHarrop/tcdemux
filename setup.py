@@ -12,7 +12,7 @@ def readme():
 
 setup(
     name='tcdemux',
-    version='0.0.11',
+    version='0.0.12',
     description=(
         'python3 wrapper for demultiplexing '
         'target capture sequencing results'
