@@ -110,7 +110,6 @@ def main():
         cores=args['threads'],
         resources=smk_resources,
         printshellcmds=True if debugging else False,
-        # quiet=False if debugging else True,
         dryrun=True if args['dry_run'] else False,
         restart_times=args['restart_times'],
         lock=False)
