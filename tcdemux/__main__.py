@@ -87,6 +87,9 @@ def main():
         datefmt='%Y-%m-%d %H:%M:%S',
         level=logging.INFO)
 
+    # are we debugging?
+    debugging = True if logging.DEBUG >= logging.root.level else False
+
     # get the snakefile
     snakefile = resource_filename(__name__, 'Snakefile')
     logging.debug(f'Using snakefile {snakefile}')
@@ -106,7 +109,7 @@ def main():
         config=args,
         cores=args['threads'],
         resources=smk_resources,
-        printshellcmds=True,
+        printshellcmds=True if debugging else False,
         dryrun=True if args['dry_run'] else False,
         restart_times=args['restart_times'],
         lock=False)
