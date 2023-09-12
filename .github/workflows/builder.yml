@@ -33,12 +33,11 @@ jobs:
       - name: Check if the release exists
         run: |
             git fetch --tags
-            echo "all tags:"
-            echo "$(git tag -l)"
             if [ $(git tag -l ${{ env.release_tag }}) ]; then
                 echo "Tag ${{ env.release_tag }} already exists"
                 echo "new_release=false" >> $GITHUB_ENV
             else
+                echo "Tag ${{ env.release_tag }} is new"
                 echo "new_release=true" >> $GITHUB_ENV
             fi
       - name: Create Release
