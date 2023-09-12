@@ -37,12 +37,13 @@ jobs:
             echo "$(git tag -l)"
             if [ $(git tag -l ${{ env.release_tag }}) ]; then
                 echo "Tag ${{ env.release_tag }} already exists"
+                echo "new_release=false" >> $GITHUB_ENV
             else
-                echo "new_release=new_release" >> $GITHUB_ENV
+                echo "new_release=true" >> $GITHUB_ENV
             fi
       - name: Create Release
         id: create_release
-        if: ${{ env.new_release == "new_release" }}
+        if: ${{ env.new_release == "true" }}
         run: |
           gh release create ${{ env.release_tag }} \
             --title ${{ env.release_tag }}
