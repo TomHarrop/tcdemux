@@ -78,8 +78,8 @@ Here’s an example sample_data file:
    GAACATAC,GCTTGTCA,sample2,sample2_r1.fastq,sample2_r2.fastq
 
 ``tcdemux`` will process the sample1 and sample2 files separately,
-resulting in output files called *sample1_r1.fastq.gz*,
-*sample1_r2.fastq.gz* and *sample1.unpaired.fastq.gz*, and the
+resulting in output files called *sample1.r1.fastq.gz*,
+*sample1.r2.fastq.gz* and *sample1.unpaired.fastq.gz*, and the
 equivalents for sample2. ``tcdemux`` does not demultiplex the samples in
 this case.
 
