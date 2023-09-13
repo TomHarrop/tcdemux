@@ -21,12 +21,12 @@ def get_repair_input(wildcards):
         'r1': Path(
             workingdir,
             '020_demultiplex',
-            '{sample}_r1.fastq'
+            '{sample}.r1.fastq'
             ),
         'r2': Path(
             workingdir,
             '020_demultiplex',
-            '{sample}_r2.fastq'
+            '{sample}.r2.fastq'
             )
         }
     else:
@@ -34,13 +34,13 @@ def get_repair_input(wildcards):
         'r1': Path(
             workingdir,
             '010_barcode-check',
-            '{sample}_r1.fastq'
+            '{sample}.r1.fastq'
             ),
 
         'r2': Path(
             workingdir,
             '010_barcode-check',
-            '{sample}_r2.fastq'
+            '{sample}.r2.fastq'
             ),
         }
 
@@ -184,7 +184,7 @@ rule target:
         expand(
             Path(
                 outdir,
-                '{sample}_r{r}.fastq.gz'
+                '{sample}.r{r}.fastq.gz'
                 ),
             sample=all_samples,
             r=[1, 2]
@@ -208,11 +208,11 @@ rule mask:
     output:
         r1 = Path(
             outdir,
-            '{sample}_r1.fastq.gz'
+            '{sample}.r1.fastq.gz'
             ),
         r2 = Path(
             outdir,
-            '{sample}_r2.fastq.gz'
+            '{sample}.r2.fastq.gz'
             ),
         stats = Path(
             statdir,
@@ -450,12 +450,12 @@ for mypool in all_pools:
             r1 = Path(
                 workingdir,
                 '010_barcode-check',
-                f'{mypool}_r1.fastq'
+                f'{mypool}.r1.fastq'
                 ),
             r2 = Path(
                 workingdir,
                 '010_barcode-check',
-                f'{mypool}_r2.fastq'
+                f'{mypool}.r2.fastq'
                 ),
             barcodes = Path(
                 workingdir,
@@ -467,7 +467,7 @@ for mypool in all_pools:
                 Path(
                     workingdir,
                     '020_demultiplex',
-                    '{sample}_r1.fastq'
+                    '{sample}.r1.fastq'
                     ),
                 sample = pool_samples
                 ),
@@ -475,7 +475,7 @@ for mypool in all_pools:
                 Path(
                     workingdir,
                     '020_demultiplex',
-                    '{sample}_r2.fastq'
+                    '{sample}.r2.fastq'
                     ),
                 sample = pool_samples
                 )
@@ -498,8 +498,8 @@ for mypool in all_pools:
             '--pair-adapters '
             '-g ^file:{input.barcodes} '
             '-G ^file:{input.barcodes} '
-            '-o {params.outdir}/{{name}}_r1.fastq '
-            '-p {params.outdir}/{{name}}_r2.fastq '
+            '-o {params.outdir}/{{name}}.r1.fastq '
+            '-p {params.outdir}/{{name}}.r2.fastq '
             '{input.r1} '
             '{input.r2} '
             '&> {log}'
@@ -526,12 +526,12 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
             r1 = Path(
                 workingdir,
                 '010_barcode-check',
-                '{pool}_r1.fastq'
+                '{pool}.r1.fastq'
                 ),
             r2 = Path(
                 workingdir,
                 '010_barcode-check',
-                '{pool}_r2.fastq'
+                '{pool}.r2.fastq'
                 ),
             stats = Path(
                 statdir,
@@ -543,11 +543,11 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
                 get_pool_barcode_seq(wildcards),
             out = Path(
                 rule_tmpdir,
-                '%_r1.fastq'
+                '%.r1.fastq'
                 ).as_posix(),
             out2 = Path(
                 rule_tmpdir,
-                '%_r2.fastq'
+                '%.r2.fastq'
                 ).as_posix(),
             mem_gb = lambda wildcards, resources:
                 int((resources.mem_gb - 2) // 2),
@@ -579,10 +579,10 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
             '-Xms100m '
             '2> {log} '
             '&& '
-            'mv {rule_tmpdir}/{params.barcode_seq}_r1.fastq '
+            'mv {rule_tmpdir}/{params.barcode_seq}.r1.fastq '
             '{output.r1} '
             '&& '
-            'mv {rule_tmpdir}/{params.barcode_seq}_r2.fastq '
+            'mv {rule_tmpdir}/{params.barcode_seq}.r2.fastq '
             '{output.r2}'
 
 # check barcodes in individual barcode files
@@ -594,12 +594,12 @@ with tempfile.TemporaryDirectory() as tmpdir:
             r1 = Path(
                 workingdir,
                 '010_barcode-check',
-                '{sample}_r1.fastq'
+                '{sample}.r1.fastq'
                 ),
             r2 = Path(
                 workingdir,
                 '010_barcode-check',
-                '{sample}_r2.fastq'
+                '{sample}.r2.fastq'
                 ),
             stats = Path(
                 statdir,
@@ -611,11 +611,11 @@ with tempfile.TemporaryDirectory() as tmpdir:
                 get_sample_barcode_seq(wildcards),
             out = Path(
                 tmpdir,
-                '%_r1.fastq'
+                '%.r1.fastq'
                 ).as_posix(),
             out2 = Path(
                 tmpdir,
-                '%_r2.fastq'
+                '%.r2.fastq'
                 ).as_posix(),
             mem_gb = lambda wildcards, resources:
                 int((resources.mem_gb - 2) // 2),
@@ -646,8 +646,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
             '-Xms100m '
             '2> {log} '
             '&& '
-            'mv {tmpdir}/{params.barcode_seq}_r1.fastq '
+            'mv {tmpdir}/{params.barcode_seq}.r1.fastq '
             '{output.r1} '
             '&& '
-            'mv {tmpdir}/{params.barcode_seq}_r2.fastq '
+            'mv {tmpdir}/{params.barcode_seq}.r2.fastq '
             '{output.r2}'
