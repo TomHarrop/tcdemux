@@ -4,7 +4,7 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from pathlib import Path
-import logging
+from snakemake.logging import logger
 import pandas as pd
 import re
 import shutil
@@ -124,11 +124,11 @@ keep_intermediate_files = config['keep_intermediate_files']
 
 # set up working direcory
 if keep_intermediate_files:
-    logging.info(f'Keeping intermediate files in {outdir}')
+    logger.info(f'Keeping intermediate files in {outdir}')
     workingdir = Path(outdir, 'intermediate_files')
 else:
     workingdir = tempfile.mkdtemp()
-    logging.info(f'Using {workingdir} for intermediate files')
+    logger.info(f'Using {workingdir} for intermediate files')
 
 # read the sample data and get a list of samples
 sample_data = pd.read_csv(
@@ -140,7 +140,7 @@ all_samples = sorted(set(sample_data.index))
 # make sure there are no special characters
 for sample in all_samples:
     sample_name_sanitiser(sample)
-    logging.debug(f'sample {sample} appears sane')
+    logger.debug(f'sample {sample} appears sane')
 
 # Check for the pool_name field.
 # If the pool_name field is not present, we don't need to demultiplex internal
@@ -151,26 +151,26 @@ all_pools = []
 if 'pool_name' in sample_data:
     samples_have_internal_barcodes = True
     all_pools = sorted(set(sample_data['pool_name']))
-    logging.info(f'Detected pool_name field in {sample_data_file}.')
-    logging.info('The following pools will be demuxed using internal barcodes:')
-    logging.info(f'{" ".join(all_pools)}')
+    logger.info(f'Detected pool_name field in {sample_data_file}.')
+    logger.info('The following pools will be demuxed using internal barcodes:')
+    logger.info(f'{" ".join(all_pools)}')
 else:
-    logging.info(f'No pool_name field in {sample_data_file}.')
-    logging.info('Not attempting to demux by internal barcode.')
+    logger.info(f'No pool_name field in {sample_data_file}.')
+    logger.info('Not attempting to demux by internal barcode.')
 
 # configure resources
-logging.info(f'{max_threads} threads provided.')
-logging.info(f'{mem_gb} GB RAM provided.')
+logger.info(f'{max_threads} threads provided.')
+logger.info(f'{mem_gb} GB RAM provided.')
 sample_threads = max(1, max_threads // len(all_samples))
 sample_ram = max(4, mem_gb // len(all_samples))
-logging.info(f'Using at least {sample_threads} threads per sample.')
-logging.info(f'Using at least {sample_ram} GB RAM per sample.')
+logger.info(f'Using at least {sample_threads} threads per sample.')
+logger.info(f'Using at least {sample_ram} GB RAM per sample.')
 
 if samples_have_internal_barcodes:
     pool_threads = max(1, max_threads // len(all_pools))
     pool_ram = max(8, mem_gb // len(all_pools))
-    logging.info(f'Using at least {pool_threads} threads per pool.')
-    logging.info(f'Using at least {pool_ram} GB RAM per pool.')
+    logger.info(f'Using at least {pool_threads} threads per pool.')
+    logger.info(f'Using at least {pool_ram} GB RAM per pool.')
 else:
     pool_threads = sample_threads
     pool_ram = sample_ram

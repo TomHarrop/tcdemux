@@ -7,6 +7,7 @@ test: pooled unpooled dirty missing
 
 pooled: tests/pooled/134501_LibID134601_GAP_BRF_H5TT7DRX3_GCTTGTCA-GTATGTTC_S82_L002_r1.fastq.gz
 tests/pooled/134501_LibID134601_GAP_BRF_H5TT7DRX3_GCTTGTCA-GTATGTTC_S82_L002_r1.fastq.gz:
+	mkdir -p tests/pooled && \
 	tcdemux \
 	--sample_data data/samples.csv \
 	--adaptors data/adaptors/alicia_adapters.fa data/adaptors/TruSeq3-PE-2.fa data/adaptors/bbmap_39.01_adaptors.fa \
@@ -14,9 +15,11 @@ tests/pooled/134501_LibID134601_GAP_BRF_H5TT7DRX3_GCTTGTCA-GTATGTTC_S82_L002_r1.
 	--read_directory data/test_data \
 	--threads 10 \
 	--mem_gb 16 \
+	2>&1 | tee tests/pooled/sm.log
 
 unpooled: tests/unpooled/134486_LibID134586_GAP_BRF_H5TT7DRX3_CCGCGGTT-CTAGCGCT_S10_L002_r1.fastq.gz
 tests/unpooled/134486_LibID134586_GAP_BRF_H5TT7DRX3_CCGCGGTT-CTAGCGCT_S10_L002_r1.fastq.gz:
+	mkdir -p tests/unpooled && \
 	tcdemux \
 	--sample_data data/unpooled_samples.csv \
 	--adaptors data/adaptors/alicia_adapters.fa data/adaptors/TruSeq3-PE-2.fa data/adaptors/bbmap_39.01_adaptors.fa \
@@ -24,6 +27,7 @@ tests/unpooled/134486_LibID134586_GAP_BRF_H5TT7DRX3_CCGCGGTT-CTAGCGCT_S10_L002_r
 	--read_directory data/test_data \
 	--threads 10 \
 	--mem_gb 16
+	2>&1 | tee tests/unpooled/sm.log
 
 dirty: tests/dirty/sm.log
 tests/dirty/sm.log:
@@ -39,6 +43,7 @@ tests/dirty/sm.log:
 
 missing: tests/missing/this_sample_exists.unpaired.fastq.gz
 tests/missing/this_sample_exists.unpaired.fastq.gz:
+	mkdir -p tests/missing && \
 	tcdemux \
 	--sample_data data/samples_missing.csv \
 	--adaptors data/adaptors/alicia_adapters.fa data/adaptors/TruSeq3-PE-2.fa data/adaptors/bbmap_39.01_adaptors.fa \
@@ -46,4 +51,4 @@ tests/missing/this_sample_exists.unpaired.fastq.gz:
 	--read_directory data/test_data \
 	--threads 10 \
 	--mem_gb 16 \
-
+	2>&1 | tee tests/missing/sm.log
