@@ -2,11 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from pkg_resources import resource_filename
+from snakemake.logging import logger
 import argparse
-import logging
 import psutil
 import snakemake
-
 
 #############
 # FUNCTIONS #
@@ -81,22 +80,13 @@ def parse_arguments():
 ########
 
 def main():
-    # set up log
-    logging.basicConfig(
-        format='%(asctime)s %(levelname)-8s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S',
-        level=logging.INFO)
-
-    # are we debugging?
-    debugging = True if logging.DEBUG >= logging.root.level else False
-
     # get the snakefile
     snakefile = resource_filename(__name__, 'Snakefile')
-    logging.debug(f'Using snakefile {snakefile}')
+    logger.debug(f'Using snakefile {snakefile}')
 
     # get args
     args = parse_arguments()
-    logging.debug(f'Entrypoint args\n{args}')
+    logger.debug(f'Entrypoint args\n{args}')
 
     # define resources
     smk_resources = {
@@ -109,7 +99,7 @@ def main():
         config=args,
         cores=args['threads'],
         resources=smk_resources,
-        printshellcmds=True if debugging else False,
+        printshellcmds=logger.printshellcmds,
         dryrun=True if args['dry_run'] else False,
         restart_times=args['restart_times'],
         lock=False)
