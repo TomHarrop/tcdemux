@@ -478,7 +478,12 @@ for mypool in all_pools:
                     '{sample}.r2.fastq'
                     ),
                 sample = pool_samples
-                )
+                ),
+            stats = Path(
+                statdir,
+                'cutadapt',
+                f'{mypool}.json'
+            )
         params:
             outdir = lambda wildcards, output:
                 Path(output[0]).parent.as_posix()
@@ -500,6 +505,7 @@ for mypool in all_pools:
             '-G ^file:{input.barcodes} '
             '-o {params.outdir}/{{name}}.r1.fastq '
             '-p {params.outdir}/{{name}}.r2.fastq '
+            '--json {output.stats} '
             '{input.r1} '
             '{input.r2} '
             '&> {log}'
