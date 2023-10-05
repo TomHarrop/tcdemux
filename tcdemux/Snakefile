@@ -85,8 +85,8 @@ def stats_target(wildcards):
         demux_stats = expand(
             Path(statdir, "cutadapt", "{pool}.demux_stats.csv"), pool=all_pools
         )
-    for x in demux_stats:
-        targets.append(x)
+        for x in demux_stats:
+            targets.append(x)
     return targets
 
 
