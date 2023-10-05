@@ -15,53 +15,37 @@ import tempfile
 # FUNCTIONS #
 #############
 
+
 def get_repair_input(wildcards):
     if samples_have_internal_barcodes:
         return {
-        'r1': Path(
-            workingdir,
-            '020_demultiplex',
-            '{sample}.r1.fastq'
-            ),
-        'r2': Path(
-            workingdir,
-            '020_demultiplex',
-            '{sample}.r2.fastq'
-            )
+            "r1": Path(workingdir, "020_demultiplex", "{sample}.r1.fastq"),
+            "r2": Path(workingdir, "020_demultiplex", "{sample}.r2.fastq"),
         }
     else:
-        return{
-        'r1': Path(
-            workingdir,
-            '010_barcode-check',
-            '{sample}.r1.fastq'
-            ),
-
-        'r2': Path(
-            workingdir,
-            '010_barcode-check',
-            '{sample}.r2.fastq'
-            ),
+        return {
+            "r1": Path(workingdir, "010_barcode-check", "{sample}.r1.fastq"),
+            "r2": Path(workingdir, "010_barcode-check", "{sample}.r2.fastq"),
         }
 
 
 def get_sample_barcode_seq(wildcards):
     sample = wildcards.sample
     my_sample_data = sample_data.loc[sample]
-    i5_seq = my_sample_data['i5_index']
-    i7_seq = my_sample_data['i7_index']
+    i5_seq = my_sample_data["i5_index"]
+    i7_seq = my_sample_data["i7_index"]
     i5_rc = Seq(i5_seq).reverse_complement()
-    return(f'{i7_seq}+{i5_rc}')
+    return f"{i7_seq}+{i5_rc}"
 
 
 def get_sample_files(wildcards):
     sample = wildcards.sample
     my_sample_data = sample_data.loc[sample]
-    r1_file = my_sample_data['r1_file']
-    r2_file = my_sample_data['r2_file']
+    r1_file = my_sample_data["r1_file"]
+    r2_file = my_sample_data["r2_file"]
     return {
-        'r1': Path(read_directory, r1_file),
-        'r2': Path(read_directory, r2_file)
+        "r1": Path(read_directory, r1_file),
+        "r2": Path(read_directory, r2_file),
     }
 
 
@@ -71,31 +55,27 @@ def get_sample_files(wildcards):
 # this: CCGCGGTT+CTAGCGCT. So the i5 index has to be reverse complemented.
 def get_pool_barcode_seq(wildcards):
     pool = wildcards.pool
-    pool_data = sample_data[
-        sample_data['pool_name'] == pool
-        ]
-    i5_seq = pool_data['i5_index'][0]
-    i7_seq = pool_data['i7_index'][0]
+    pool_data = sample_data[sample_data["pool_name"] == pool]
+    i5_seq = pool_data["i5_index"][0]
+    i7_seq = pool_data["i7_index"][0]
     i5_rc = Seq(i5_seq).reverse_complement()
-    return(f'{i7_seq}+{i5_rc}')
+    return f"{i7_seq}+{i5_rc}"
 
 
 def get_pool_files(wildcards):
     pool = wildcards.pool
-    pool_data = sample_data[
-        sample_data['pool_name'] == pool
-        ]
-    r1_file = pool_data['r1_file'][0]
-    r2_file = pool_data['r2_file'][0]
+    pool_data = sample_data[sample_data["pool_name"] == pool]
+    r1_file = pool_data["r1_file"][0]
+    r2_file = pool_data["r2_file"][0]
     return {
-        'r1': Path(read_directory, r1_file),
-        'r2': Path(read_directory, r2_file)
+        "r1": Path(read_directory, r1_file),
+        "r2": Path(read_directory, r2_file),
     }
 
 
 def sample_name_sanitiser(sample_name):
-    if re.compile('[^a-zA-Z0-9_-]').search(sample_name):
-        raise ValueError(f'{sample_name} contains special character(s)')
+    if re.compile("[^a-zA-Z0-9_-]").search(sample_name):
+        raise ValueError(f"{sample_name} contains special character(s)")
 
 
 ###########
@@ -103,19 +83,19 @@ def sample_name_sanitiser(sample_name):
 ###########
 
 # config from entrypoint
-sample_data_file = Path(config['sample_data_file'])
-read_directory = Path(config['read_directory'])
+sample_data_file = Path(config["sample_data_file"])
+read_directory = Path(config["read_directory"])
 
-adaptor_files = config['adaptor_files']
+adaptor_files = config["adaptor_files"]
 
-outdir = Path(config['outdir'])
-logdir = Path(outdir, 'logs')
-statdir = Path(outdir, 'stats')
+outdir = Path(config["outdir"])
+logdir = Path(outdir, "logs")
+statdir = Path(outdir, "stats")
 
-mem_gb = config['mem_gb']
-max_threads = config['threads']
+mem_gb = config["mem_gb"]
+max_threads = config["threads"]
 
-keep_intermediate_files = config['keep_intermediate_files']
+keep_intermediate_files = config["keep_intermediate_files"]
 
 
 ########
@@ -124,23 +104,21 @@ keep_intermediate_files = config['keep_intermediate_files']
 
 # set up working direcory
 if keep_intermediate_files:
-    logger.info(f'Keeping intermediate files in {outdir}')
-    workingdir = Path(outdir, 'intermediate_files')
+    logger.info(f"Keeping intermediate files in {outdir}")
+    workingdir = Path(outdir, "intermediate_files")
 else:
     workingdir = tempfile.mkdtemp()
-    logger.info(f'Using {workingdir} for intermediate files')
+    logger.info(f"Using {workingdir} for intermediate files")
 
 # read the sample data and get a list of samples
-sample_data = pd.read_csv(
-    sample_data_file,
-    index_col='name')
+sample_data = pd.read_csv(sample_data_file, index_col="name")
 
 all_samples = sorted(set(sample_data.index))
 
 # make sure there are no special characters
 for sample in all_samples:
     sample_name_sanitiser(sample)
-    logger.debug(f'sample {sample} appears sane')
+    logger.debug(f"sample {sample} appears sane")
 
 # Check for the pool_name field.
 # If the pool_name field is not present, we don't need to demultiplex internal
@@ -148,29 +126,29 @@ for sample in all_samples:
 # This is done with with conditionals in the inputs
 samples_have_internal_barcodes = False
 all_pools = []
-if 'pool_name' in sample_data:
+if "pool_name" in sample_data:
     samples_have_internal_barcodes = True
-    all_pools = sorted(set(sample_data['pool_name']))
-    logger.info(f'Detected pool_name field in {sample_data_file}.')
-    logger.info('The following pools will be demuxed using internal barcodes:')
+    all_pools = sorted(set(sample_data["pool_name"]))
+    logger.info(f"Detected pool_name field in {sample_data_file}.")
+    logger.info("The following pools will be demuxed using internal barcodes:")
     logger.info(f'{" ".join(all_pools)}')
 else:
-    logger.info(f'No pool_name field in {sample_data_file}.')
-    logger.info('Not attempting to demux by internal barcode.')
+    logger.info(f"No pool_name field in {sample_data_file}.")
+    logger.info("Not attempting to demux by internal barcode.")
 
 # configure resources
-logger.info(f'{max_threads} threads provided.')
-logger.info(f'{mem_gb} GB RAM provided.')
+logger.info(f"{max_threads} threads provided.")
+logger.info(f"{mem_gb} GB RAM provided.")
 sample_threads = max(1, max_threads // len(all_samples))
 sample_ram = max(4, mem_gb // len(all_samples))
-logger.info(f'Using at least {sample_threads} threads per sample.')
-logger.info(f'Using at least {sample_ram} GB RAM per sample.')
+logger.info(f"Using at least {sample_threads} threads per sample.")
+logger.info(f"Using at least {sample_ram} GB RAM per sample.")
 
 if samples_have_internal_barcodes:
     pool_threads = max(1, max_threads // len(all_pools))
     pool_ram = max(8, mem_gb // len(all_pools))
-    logger.info(f'Using at least {pool_threads} threads per pool.')
-    logger.info(f'Using at least {pool_ram} GB RAM per pool.')
+    logger.info(f"Using at least {pool_threads} threads per pool.")
+    logger.info(f"Using at least {pool_ram} GB RAM per pool.")
 else:
     pool_threads = sample_threads
     pool_ram = sample_ram
@@ -179,253 +157,168 @@ else:
 # RULES #
 #########
 
+
 rule target:
     input:
         expand(
-            Path(
-                outdir,
-                '{sample}.r{r}.fastq.gz'
-                ),
+            Path(outdir, "{sample}.r{r}.fastq.gz"),
             sample=all_samples,
-            r=[1, 2]
-            ),
-        expand(
-            Path(
-                outdir,
-                '{sample}.unpaired.fastq.gz'
-                ),
-            sample=all_samples
-            )
+            r=[1, 2],
+        ),
+        expand(Path(outdir, "{sample}.unpaired.fastq.gz"), sample=all_samples),
+
 
 # mask low complexity regions
 rule mask:
     input:
-        pipe = Path(
-            workingdir,
-            '040_trim',
-            '{sample}.paired.fastq'
-            )
+        pipe=Path(workingdir, "040_trim", "{sample}.paired.fastq"),
     output:
-        r1 = Path(
-            outdir,
-            '{sample}.r1.fastq.gz'
-            ),
-        r2 = Path(
-            outdir,
-            '{sample}.r2.fastq.gz'
-            ),
-        stats = Path(
-            statdir,
-            'mask',
-            '{sample}.txt'
-            )
+        r1=Path(outdir, "{sample}.r1.fastq.gz"),
+        r2=Path(outdir, "{sample}.r2.fastq.gz"),
+        stats=Path(statdir, "mask", "{sample}.txt"),
     log:
-        Path(
-            logdir,
-            'mask',
-            '{sample}.log'
-            ),
-    threads:
-        1
+        Path(logdir, "mask", "{sample}.log"),
+    threads: 1
     resources:
-        time = lambda wildcards, attempt: 10 * attempt,
-        mem_gb = lambda wildcards, attempt: 1 * attempt,
+        time=lambda wildcards, attempt: 10 * attempt,
+        mem_gb=lambda wildcards, attempt: 1 * attempt,
     shell:
-        'bbduk.sh '
-        '-Xmx{resources.mem_gb}g '
-        'threads={threads} '
-        'in={input.pipe} '
-        'int=t '
-        'out={output.r1} '
-        'out2={output.r2} '
-        'zl=9 '
-        'entropy=0.8 '
-        'entropywindow=20 '
-        'entropymask=t '
-        'stats={output.stats} '
-        '2> {log} '
+        "bbduk.sh "
+        "-Xmx{resources.mem_gb}g "
+        "threads={threads} "
+        "in={input.pipe} "
+        "int=t "
+        "out={output.r1} "
+        "out2={output.r2} "
+        "zl=9 "
+        "entropy=0.8 "
+        "entropywindow=20 "
+        "entropymask=t "
+        "stats={output.stats} "
+        "2> {log} "
+
 
 rule mask_unpaired:
     input:
-        Path(
-            workingdir,
-            '040_trim',
-            '{sample}.unpaired.fastq'
-            )
+        Path(workingdir, "040_trim", "{sample}.unpaired.fastq"),
     output:
-        fq = Path(
-            outdir,
-            '{sample}.unpaired.fastq.gz'
-            ),
-        stats = Path(
-            statdir,
-            'mask',
-            '{sample}.unpaired.txt'
-            )
+        fq=Path(outdir, "{sample}.unpaired.fastq.gz"),
+        stats=Path(statdir, "mask", "{sample}.unpaired.txt"),
     log:
-        Path(
-            logdir,
-            'mask_unpaired',
-            '{sample}.log'
-            ),
-    threads:
-        1
+        Path(logdir, "mask_unpaired", "{sample}.log"),
+    threads: 1
     resources:
-        time = lambda wildcards, attempt: 10 * attempt,
-        mem_gb = lambda wildcards, attempt: 1 * attempt,
+        time=lambda wildcards, attempt: 10 * attempt,
+        mem_gb=lambda wildcards, attempt: 1 * attempt,
     shell:
-        'bbduk.sh '
-        '-Xmx{resources.mem_gb}g '
-        'threads={threads} '
-        'in={input} '
-        'int=f '
-        'out={output.fq} '
-        'zl=9 '
-        'entropy=0.8 '
-        'entropywindow=20 '
-        'entropymask=t '
-        'stats={output.stats} '
-        '2> {log} '
+        "bbduk.sh "
+        "-Xmx{resources.mem_gb}g "
+        "threads={threads} "
+        "in={input} "
+        "int=f "
+        "out={output.fq} "
+        "zl=9 "
+        "entropy=0.8 "
+        "entropywindow=20 "
+        "entropymask=t "
+        "stats={output.stats} "
+        "2> {log} "
+
 
 # trim adaptors
 rule trim:
     input:
-        pipe = Path(
-            workingdir,
-            '030_repair',
-            '{sample}.fastq'
-            ),
-        adaptors = Path(
-            workingdir, 
-            'adaptors.fasta'
-            ),
+        pipe=Path(workingdir, "030_repair", "{sample}.fastq"),
+        adaptors=Path(workingdir, "adaptors.fasta"),
     output:
-        pipe = pipe(
-            Path(
-            workingdir,
-            '040_trim',
-            '{sample}.paired.fastq'
-            )
-            ),
-        unpaired = pipe(
-            Path(
-            workingdir,
-            '040_trim',
-            '{sample}.unpaired.fastq'
-            )
-            ),
-        stats = Path(
-            statdir,
-            'trim',
-            '{sample}.txt'
-            )
+        pipe=pipe(Path(workingdir, "040_trim", "{sample}.paired.fastq")),
+        unpaired=pipe(Path(workingdir, "040_trim", "{sample}.unpaired.fastq")),
+        stats=Path(statdir, "trim", "{sample}.txt"),
     params:
-        ft = lambda wildcards:
-            '' if samples_have_internal_barcodes else 'forcetrimmod=5'
+        ft=lambda wildcards: ""
+        if samples_have_internal_barcodes
+        else "forcetrimmod=5",
     log:
-        Path(
-            logdir,
-            'trim',
-            '{sample}.log'
-            )
-    threads:
-        2
+        Path(logdir, "trim", "{sample}.log"),
+    threads: 2
     resources:
-        time = lambda wildcards, attempt: 10 * attempt,
-        mem_gb = lambda wildcards, attempt: 2 * attempt,
+        time=lambda wildcards, attempt: 10 * attempt,
+        mem_gb=lambda wildcards, attempt: 2 * attempt,
     shell:
-        'bbduk.sh '
-        '-Xmx{resources.mem_gb}g '
-        'threads={threads} '
-        'in={input.pipe} '
-        'int=t '
-        'out=stdout.fastq '
-        'outs={output.unpaired} '
-        'ref={input.adaptors} '
-        'ktrim=r k=23 mink=11 hdist=1 tpe tbo '
-        '{params.ft} '
-        'stats={output.stats} '
-        '>> {output.pipe} '
-        '2> {log} '
+        "bbduk.sh "
+        "-Xmx{resources.mem_gb}g "
+        "threads={threads} "
+        "in={input.pipe} "
+        "int=t "
+        "out=stdout.fastq "
+        "outs={output.unpaired} "
+        "ref={input.adaptors} "
+        "ktrim=r k=23 mink=11 hdist=1 tpe tbo "
+        "{params.ft} "
+        "stats={output.stats} "
+        ">> {output.pipe} "
+        "2> {log} "
+
 
 # double check pairing
 rule repair:
     input:
-        unpack(get_repair_input)
+        unpack(get_repair_input),
     output:
-        pipe(
-            Path(
-            workingdir,
-            '030_repair',
-            '{sample}.fastq'
-            )
-            )
+        pipe(Path(workingdir, "030_repair", "{sample}.fastq")),
     params:
-        mem_gb = lambda wildcards, resources:
-                int(resources.mem_gb - 2),
+        mem_gb=lambda wildcards, resources: int(resources.mem_gb - 2),
     log:
-        Path(
-            logdir,
-            'repair',
-            '{sample}.log')
-    threads:
-        1
+        Path(logdir, "repair", "{sample}.log"),
+    threads: 1
     resources:
-        time = lambda wildcards, attempt: 10 * attempt,
-        mem_gb = lambda wildcards, attempt: 4 * attempt,
+        time=lambda wildcards, attempt: 10 * attempt,
+        mem_gb=lambda wildcards, attempt: 4 * attempt,
     shell:
-        'repair.sh '
-        '-Xmx{params.mem_gb}g '
-        '-Xms100m '
-        'in={input.r1} '
-        'in2={input.r2} '
-        'out=stdout.fastq '
-        'outs=/dev/null '
-        'repair=t '
-        'tossbrokenreads=t '
-        'tossjunk=t '
-        '>> {output} '
-        '2> {log}'
+        "repair.sh "
+        "-Xmx{params.mem_gb}g "
+        "-Xms100m "
+        "in={input.r1} "
+        "in2={input.r2} "
+        "out=stdout.fastq "
+        "outs=/dev/null "
+        "repair=t "
+        "tossbrokenreads=t "
+        "tossjunk=t "
+        ">> {output} "
+        "2> {log}"
 
 
 rule combine_adaptors:
     input:
-        adaptor_files
+        adaptor_files,
     output:
-        adaptors = Path(
-            workingdir, 
-            'adaptors.fasta'
-            ),
-        duplicates = Path(
-            statdir, 
-            'duplicated_adaptors.fasta'
-            )
+        adaptors=Path(workingdir, "adaptors.fasta"),
+        duplicates=Path(statdir, "duplicated_adaptors.fasta"),
     log:
-        Path(
-            logdir,
-            'combine_adaptors.log')
-    threads:
-        1
+        Path(logdir, "combine_adaptors.log"),
+    threads: 1
     resources:
-        time = lambda wildcards, attempt: 10 * attempt,
-        mem_gb = 4
+        time=lambda wildcards, attempt: 10 * attempt,
+        mem_gb=4,
     shell:
-        'cat {input} | '
-        'dedupe.sh '
-        '-Xmx{resources.mem_gb}g '
-        'in=stdin.fasta '
-        'out={output.adaptors} '
-        'outd={output.duplicates} '
-        'absorbcontainment=f '
-        'absorbrc=f '
-        'ascending=t '
-        'exact=t '
-        'maxedits=0 '
-        'maxsubs=0 '
-        'sort=name '
-        'touppercase=t '
-        'uniquenames=t '
-        '2> {log} '
+        "cat {input} | "
+        "dedupe.sh "
+        "-Xmx{resources.mem_gb}g "
+        "in=stdin.fasta "
+        "out={output.adaptors} "
+        "outd={output.duplicates} "
+        "absorbcontainment=f "
+        "absorbrc=f "
+        "ascending=t "
+        "exact=t "
+        "maxedits=0 "
+        "maxsubs=0 "
+        "sort=name "
+        "touppercase=t "
+        "uniquenames=t "
+        "2> {log} "
+
 
 # demux using cutadapt
 # NOTE! I think the most straightforward way to do this is using cutadapt's
@@ -443,217 +336,149 @@ rule combine_adaptors:
 # safe.
 
 for mypool in all_pools:
-    pool_sd = sample_data[sample_data['pool_name'] == mypool]
+    pool_sd = sample_data[sample_data["pool_name"] == mypool]
     pool_samples = sorted(set(pool_sd.index))
+
     rule:
         input:
-            r1 = Path(
-                workingdir,
-                '010_barcode-check',
-                f'{mypool}.r1.fastq'
-                ),
-            r2 = Path(
-                workingdir,
-                '010_barcode-check',
-                f'{mypool}.r2.fastq'
-                ),
-            barcodes = Path(
-                workingdir,
-                '020_demultiplex',
-                f'{mypool}.barcodes.fasta'
-                )
+            r1=Path(workingdir, "010_barcode-check", f"{mypool}.r1.fastq"),
+            r2=Path(workingdir, "010_barcode-check", f"{mypool}.r2.fastq"),
+            barcodes=Path(
+                workingdir, "020_demultiplex", f"{mypool}.barcodes.fasta"
+            ),
         output:
-            r1 = expand(
-                Path(
-                    workingdir,
-                    '020_demultiplex',
-                    '{sample}.r1.fastq'
-                    ),
-                sample = pool_samples
-                ),
-            r2 = expand(
-                Path(
-                    workingdir,
-                    '020_demultiplex',
-                    '{sample}.r2.fastq'
-                    ),
-                sample = pool_samples
-                ),
-            stats = Path(
-                statdir,
-                'cutadapt',
-                f'{mypool}.json'
-            )
+            r1=expand(
+                Path(workingdir, "020_demultiplex", "{sample}.r1.fastq"),
+                sample=pool_samples,
+            ),
+            r2=expand(
+                Path(workingdir, "020_demultiplex", "{sample}.r2.fastq"),
+                sample=pool_samples,
+            ),
+            stats=Path(statdir, "cutadapt", f"{mypool}.json"),
         params:
-            outdir = lambda wildcards, output:
-                Path(output[0]).parent.as_posix()
+            outdir=lambda wildcards, output: Path(output[0]).parent.as_posix(),
         log:
-            Path(
-                logdir,
-                'cutadapt',
-                f'{mypool}.log'
-                )
-        threads:
-            max(2, pool_threads)
+            Path(logdir, "cutadapt", f"{mypool}.log"),
+        threads: max(2, pool_threads)
         shell:
-            'cutadapt '
-            '-j {threads} '
-            '-e 0 '
-            '--no-indels '
-            '--pair-adapters '
-            '-g ^file:{input.barcodes} '
-            '-G ^file:{input.barcodes} '
-            '-o {params.outdir}/{{name}}.r1.fastq '
-            '-p {params.outdir}/{{name}}.r2.fastq '
-            '--json {output.stats} '
-            '{input.r1} '
-            '{input.r2} '
-            '&> {log}'
+            "cutadapt "
+            "-j {threads} "
+            "-e 0 "
+            "--no-indels "
+            "--pair-adapters "
+            "-g ^file:{input.barcodes} "
+            "-G ^file:{input.barcodes} "
+            "-o {params.outdir}/{{name}}.r1.fastq "
+            "-p {params.outdir}/{{name}}.r2.fastq "
+            "--json {output.stats} "
+            "{input.r1} "
+            "{input.r2} "
+            "&> {log}"
+
     rule:
         input:
-            sample_data = sample_data_file
+            sample_data=sample_data_file,
         output:
-            barcode_file = Path(
-                workingdir,
-                '020_demultiplex',
-                f'{mypool}.barcodes.fasta'
-                )
+            barcode_file=Path(
+                workingdir, "020_demultiplex", f"{mypool}.barcodes.fasta"
+            ),
         params:
-            pool = mypool
+            pool=mypool,
         script:
-            shutil.which('write_barcode_file.py')
+            shutil.which("write_barcode_file.py")
+
 
 # check barcodes in pooled fastq files
 with tempfile.TemporaryDirectory() as rule_tmpdir:
+
     rule check_pool_barcodes:
         input:
-            unpack(get_pool_files)
+            unpack(get_pool_files),
         output:
-            r1 = Path(
-                workingdir,
-                '010_barcode-check',
-                '{pool}.r1.fastq'
-                ),
-            r2 = Path(
-                workingdir,
-                '010_barcode-check',
-                '{pool}.r2.fastq'
-                ),
-            stats = Path(
-                statdir,
-                'check_pool_barcodes',
-                '{pool}.txt'
-                ),
+            r1=Path(workingdir, "010_barcode-check", "{pool}.r1.fastq"),
+            r2=Path(workingdir, "010_barcode-check", "{pool}.r2.fastq"),
+            stats=Path(statdir, "check_pool_barcodes", "{pool}.txt"),
         params:
-            barcode_seq = lambda wildcards:
-                get_pool_barcode_seq(wildcards),
-            out = Path(
-                rule_tmpdir,
-                '%.r1.fastq'
-                ).as_posix(),
-            out2 = Path(
-                rule_tmpdir,
-                '%.r2.fastq'
-                ).as_posix(),
-            mem_gb = lambda wildcards, resources:
-                int((resources.mem_gb - 2) // 2),
-            streams = 2
+            barcode_seq=lambda wildcards: get_pool_barcode_seq(wildcards),
+            out=Path(rule_tmpdir, "%.r1.fastq").as_posix(),
+            out2=Path(rule_tmpdir, "%.r2.fastq").as_posix(),
+            mem_gb=lambda wildcards, resources: int(
+                (resources.mem_gb - 2) // 2
+            ),
+            streams=2,
         log:
-            Path(
-                logdir,
-                'check_pool_barcodes',
-                '{pool}.log'
-                )
-        threads:
-            2
+            Path(logdir, "check_pool_barcodes", "{pool}.log"),
+        threads: 2
         resources:
-            mem_gb = 8
+            mem_gb=8,
         shell:
-            'mkdir -p {rule_tmpdir} ; '
-            'demuxbyname.sh ' 
-            'delimiter=: prefixmode=f ' # use the last column
-            'names={params.barcode_seq} '
-            'out={params.out} '
-            'out2={params.out2} '
-            'outu=/dev/null '
-            'stats={output.stats} '
-            'in={input.r1} '
-            'in2={input.r2} '
-            'streams={params.streams} '
-            'threads={threads} '
-            '-Xmx{params.mem_gb}g '
-            '-Xms100m '
-            '2> {log} '
-            '&& '
-            'mv {rule_tmpdir}/{params.barcode_seq}.r1.fastq '
-            '{output.r1} '
-            '&& '
-            'mv {rule_tmpdir}/{params.barcode_seq}.r2.fastq '
-            '{output.r2}'
+            "mkdir -p {rule_tmpdir} ; "
+            "demuxbyname.sh "
+            "delimiter=: prefixmode=f "
+            "names={params.barcode_seq} "
+            "out={params.out} "
+            "out2={params.out2} "
+            "outu=/dev/null "
+            "stats={output.stats} "
+            "in={input.r1} "
+            "in2={input.r2} "
+            "streams={params.streams} "
+            "threads={threads} "
+            "-Xmx{params.mem_gb}g "
+            "-Xms100m "
+            "2> {log} "
+            "&& "
+            "mv {rule_tmpdir}/{params.barcode_seq}.r1.fastq "
+            "{output.r1} "
+            "&& "
+            "mv {rule_tmpdir}/{params.barcode_seq}.r2.fastq "
+            "{output.r2}"
+            # use the last column
+
 
 # check barcodes in individual barcode files
 with tempfile.TemporaryDirectory() as tmpdir:
+
     rule check_sample_barcodes:
         input:
-            unpack(get_sample_files)
+            unpack(get_sample_files),
         output:
-            r1 = Path(
-                workingdir,
-                '010_barcode-check',
-                '{sample}.r1.fastq'
-                ),
-            r2 = Path(
-                workingdir,
-                '010_barcode-check',
-                '{sample}.r2.fastq'
-                ),
-            stats = Path(
-                statdir,
-                'check_sample_barcodes',
-                '{sample}.txt'
-                ),
+            r1=Path(workingdir, "010_barcode-check", "{sample}.r1.fastq"),
+            r2=Path(workingdir, "010_barcode-check", "{sample}.r2.fastq"),
+            stats=Path(statdir, "check_sample_barcodes", "{sample}.txt"),
         params:
-            barcode_seq = lambda wildcards:
-                get_sample_barcode_seq(wildcards),
-            out = Path(
-                tmpdir,
-                '%.r1.fastq'
-                ).as_posix(),
-            out2 = Path(
-                tmpdir,
-                '%.r2.fastq'
-                ).as_posix(),
-            mem_gb = lambda wildcards, resources:
-                int((resources.mem_gb - 2) // 2),
-            streams = 2
+            barcode_seq=lambda wildcards: get_sample_barcode_seq(wildcards),
+            out=Path(tmpdir, "%.r1.fastq").as_posix(),
+            out2=Path(tmpdir, "%.r2.fastq").as_posix(),
+            mem_gb=lambda wildcards, resources: int(
+                (resources.mem_gb - 2) // 2
+            ),
+            streams=2,
         log:
-            Path(
-                logdir,
-                'check_pool_barcodes',
-                '{sample}.log'
-                )
-        threads:
-            2
+            Path(logdir, "check_pool_barcodes", "{sample}.log"),
+        threads: 2
         resources:
-            mem_gb = 8
+            mem_gb=8,
         shell:
-            'demuxbyname.sh ' 
-            'delimiter=: prefixmode=f ' # use the last column
-            'names={params.barcode_seq} '
-            'out={params.out} '
-            'out2={params.out2} '
-            'outu=/dev/null '
-            'stats={output.stats} '
-            'in={input.r1} '
-            'in2={input.r2} '
-            'streams={params.streams} '
-            'threads={threads} '
-            '-Xmx{params.mem_gb}g '
-            '-Xms100m '
-            '2> {log} '
-            '&& '
-            'mv {tmpdir}/{params.barcode_seq}.r1.fastq '
-            '{output.r1} '
-            '&& '
-            'mv {tmpdir}/{params.barcode_seq}.r2.fastq '
-            '{output.r2}'
+            "demuxbyname.sh "
+            "delimiter=: prefixmode=f "
+            "names={params.barcode_seq} "
+            "out={params.out} "
+            "out2={params.out2} "
+            "outu=/dev/null "
+            "stats={output.stats} "
+            "in={input.r1} "
+            "in2={input.r2} "
+            "streams={params.streams} "
+            "threads={threads} "
+            "-Xmx{params.mem_gb}g "
+            "-Xms100m "
+            "2> {log} "
+            "&& "
+            "mv {tmpdir}/{params.barcode_seq}.r1.fastq "
+            "{output.r1} "
+            "&& "
+            "mv {tmpdir}/{params.barcode_seq}.r2.fastq "
+            "{output.r2}"
+            # use the last column
