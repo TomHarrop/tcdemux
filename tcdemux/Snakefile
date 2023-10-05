@@ -354,7 +354,7 @@ for mypool in all_pools:
 
     rule:
         input:
-            Path(workingdir, f"cutadapt.{mypool}.json"),
+            Path(statdir, "cutadapt", f"{mypool}.full_stats.json"),
         output:
             Path(statdir, "cutadapt", f"{mypool}.demux_stats.csv"),
         shell:
@@ -376,7 +376,7 @@ for mypool in all_pools:
                 Path(workingdir, "020_demultiplex", "{sample}.r2.fastq"),
                 sample=pool_samples,
             ),
-            stats=temp(Path(workingdir, f"cutadapt.{mypool}.json")),
+            stats=Path(statdir, "cutadapt", f"{mypool}.full_stats.json"),
         params:
             outdir=lambda wildcards, output: Path(output[0]).parent.as_posix(),
         log:
