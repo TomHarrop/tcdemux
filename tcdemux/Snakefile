@@ -78,6 +78,18 @@ def sample_name_sanitiser(sample_name):
         raise ValueError(f"{sample_name} contains special character(s)")
 
 
+# use this to determine which stats targets to produce
+def stats_target(wildcards):
+    targets = []
+    if samples_have_internal_barcodes:
+        demux_stats = expand(
+            Path(statdir, "cutadapt", "{pool}.demux_stats.csv"), pool=all_pools
+        )
+    for x in demux_stats:
+        targets.append(x)
+    return targets
+
+
 ###########
 # GLOBALS #
 ###########
@@ -166,6 +178,7 @@ rule target:
             r=[1, 2],
         ),
         expand(Path(outdir, "{sample}.unpaired.fastq.gz"), sample=all_samples),
+        stats_target,
 
 
 # mask low complexity regions
@@ -341,6 +354,14 @@ for mypool in all_pools:
 
     rule:
         input:
+            Path(workingdir, f"cutadapt.{mypool}.json"),
+        output:
+            Path(statdir, "cutadapt", f"{mypool}.demux_stats.csv"),
+        shell:
+            "parse_cutadapt_stats.py < {input} > {output}"
+
+    rule:
+        input:
             r1=Path(workingdir, "010_barcode-check", f"{mypool}.r1.fastq"),
             r2=Path(workingdir, "010_barcode-check", f"{mypool}.r2.fastq"),
             barcodes=Path(
@@ -355,7 +376,7 @@ for mypool in all_pools:
                 Path(workingdir, "020_demultiplex", "{sample}.r2.fastq"),
                 sample=pool_samples,
             ),
-            stats=Path(statdir, "cutadapt", f"{mypool}.json"),
+            stats=temp(Path(workingdir, f"cutadapt.{mypool}.json")),
         params:
             outdir=lambda wildcards, output: Path(output[0]).parent.as_posix(),
         log:
