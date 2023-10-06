@@ -1,7 +1,8 @@
 #!/usr/bin/env Rscript
 
 log <- file(snakemake@log[[1]],
-            open = "wt")
+  open = "wt"
+)
 sink(log, type = "message")
 sink(log, type = "output", append = TRUE)
 
@@ -18,12 +19,14 @@ dup_data_long <- rbindlist(
     Raw = fread(before_file),
     Processed = fread(after_file)
   ),
-  idcol = "step")
+  idcol = "step"
+)
 
 dup_data <- dcast(
   dup_data_long,
   sample + step ~ type,
-  value.var = "reads")
+  value.var = "reads"
+)
 
 dup_data[, "Duplication rate" := Duplicates / Input]
 dup_data[, step := factor(step, levels = c("Raw", "Processed"))]
@@ -35,12 +38,12 @@ gp <- ggplot(dup_data, aes(x = `Duplication rate`)) +
   geom_histogram(binwidth = 0.01)
 
 ggsave(plot_file,
-       gp,
-       width = 13.33,
-       height = 7.5,
-       units = "in",
-       device = cairo_pdf,
-       limitsize = FALSE)
+  gp,
+  width = 13.33,
+  height = 7.5,
+  units = "in",
+  device = cairo_pdf,
+  limitsize = FALSE
+)
 
 sessionInfo()
-
