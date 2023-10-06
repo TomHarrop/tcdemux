@@ -230,6 +230,7 @@ rule target:
             step=log_steps,
         ),
         Path(statdir, "adaptor_stats.pdf"),
+        Path(statdir, "duplication_stats.pdf"),
 
 
 ##############
@@ -580,6 +581,18 @@ rule plot_adaptor_stats:
         Path(logdir, "plot_adaptor_stats.log"),
     script:
         shutil.which("plot_adaptor_stats.R")
+
+
+rule plot_duplication_stats:
+    input:
+        before_file=Path(statdir, "count_duplicates_before_processing.csv"),
+        after_file=Path(statdir, "count_duplicates_after_processing.csv"),
+    output:
+        plot=Path(statdir, "duplication_stats.pdf"),
+    log:
+        Path(logdir, "plot_duplication_stats.log"),
+    script:
+        shutil.which("plot_duplication_stats.R")
 
 
 rule combine_step_logs:

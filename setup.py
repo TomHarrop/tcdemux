@@ -13,7 +13,7 @@ def readme():
 
 setup(
     name="tcdemux",
-    version="0.0.15",
+    version="0.0.16",
     description=(
         "python3 wrapper for demultiplexing " "target capture sequencing results"
     ),
@@ -33,9 +33,10 @@ setup(
         "console_scripts": ["tcdemux = tcdemux.__main__:main"],
     },
     scripts={
-        "tcdemux/src/process_step_logs.py",
         "tcdemux/src/parse_cutadapt_stats.py",
         "tcdemux/src/plot_adaptor_stats.R",
+        "tcdemux/src/plot_duplication_stats.R",
+        "tcdemux/src/process_step_logs.py",
         "tcdemux/src/write_barcode_file.py",
     },
     package_data={
