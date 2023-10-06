@@ -1,0 +1,11 @@
+__pycache__/
+.RData
+.Rhistory
+.Rproj.user
+.Ruserdata
+.snakemake/
+*.egg-
+*.Rproj
+data/
+tests/
+venv/
