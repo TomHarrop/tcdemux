@@ -159,8 +159,6 @@ Overview
 With internal barcodes
 ~~~~~~~~~~~~~~~~~~~~~~
 
-**The numbered (anonymous) rules are cutadapt demultiplexing runs**.
-
 .. figure:: assets/graph.svg
    :alt: Snakemake rulegraph
 

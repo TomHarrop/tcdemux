@@ -52,3 +52,44 @@ tests/missing/this_sample_exists.unpaired.fastq.gz:
 	--threads 10 \
 	--mem_gb 16 \
 	2>&1 | tee tests/missing/sm.log
+
+graph: assets/graph.svg assets/external_only_graph.svg
+
+assets/graph.svg:
+	snakemake -n \
+	-s tcdemux/Snakefile \
+	--cores 12 \
+	--rulegraph \
+	--forceall \
+	--config \
+	sample_data_file=data/samples_graph.csv \
+	read_directory=data/test_data \
+	adaptor_files=data/adaptors/TruSeq3-PE-2.fa \
+	outdir=tests/graph \
+	mem_gb=12 \
+	threads=12 \
+	keep_intermediate_files=False \
+	| grep -v "^[[:space:]+]0" | grep -v "\->[[:space:]]0" \
+	| sed 's/label = "7"/label = "parse_cutadapt_stats"/g' \
+	| sed 's/label = "8"/label = "cutadapt"/g' \
+	| sed 's/label = "9"/label = "write_barcode_file"/g' \
+	| dot -Tsvg \
+	> assets/graph.svg
+
+assets/external_only_graph.svg:
+	snakemake -n \
+	-s tcdemux/Snakefile \
+	--cores 12 \
+	--rulegraph \
+	--forceall \
+	--config \
+	sample_data_file=data/unpooled_samples_graph.csv \
+	read_directory=data/test_data \
+	adaptor_files=data/adaptors/TruSeq3-PE-2.fa \
+	outdir=tests/graph \
+	mem_gb=12 \
+	threads=12 \
+	keep_intermediate_files=False \
+	| grep -v "^[[:space:]+]0" | grep -v "\->[[:space:]]0" \
+	| dot -Tsvg \
+	> assets/external_only_graph.svg

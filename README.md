@@ -132,8 +132,6 @@ options:
 
 ### With internal barcodes
 
-**The numbered (anonymous) rules are cutadapt demultiplexing runs**.
-
 ![Snakemake rulegraph](assets/graph.svg)
 
 ### With only external barcodes
