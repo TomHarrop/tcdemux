@@ -16,6 +16,18 @@ import tempfile
 #############
 
 
+def get_dedupe_input(wildcards):
+    if wildcards.readset == "before_processing":
+        return get_repair_input(wildcards)
+    elif wildcards.readset == "after_processing":
+        return {
+            "r1": Path(outdir, "{sample}.r1.fastq.gz"),
+            "r2": Path(outdir, "{sample}.r2.fastq.gz"),
+        }
+    else:
+        raise ValueError(f"Error parsing wildcards: {wildcards}")
+
+
 def get_repair_input(wildcards):
     if samples_have_internal_barcodes:
         return {
@@ -78,9 +90,10 @@ def sample_name_sanitiser(sample_name):
         raise ValueError(f"{sample_name} contains special character(s)")
 
 
-# use this to determine which stats targets to produce
-def stats_target(wildcards):
+# because demux is conditional this needs to be a function
+def demux_stats_target(wildcards):
     targets = []
+    # demuxing stats
     if samples_have_internal_barcodes:
         demux_stats = expand(
             Path(statdir, "cutadapt", "{pool}.demux_stats.csv"), pool=all_pools
@@ -165,6 +178,33 @@ else:
     pool_threads = sample_threads
     pool_ram = sample_ram
 
+
+# Configure log parsing. These fields will be grepped out of the bbduk logs and
+# show up in the final CSVs.
+log_fields = [
+    "Containments:",
+    "Duplicates:",
+    "Entropy-masked:",
+    "FTrimmed:",
+    "Input:",
+    "KTrimmed:",
+    "Pairs:",
+    "Result:",
+    "Singletons:",
+]
+log_regex = "\|".join(log_fields)
+
+# These logs will be grepped for stats. Don't try to parse the demuxbyname
+# logs, they have a different format.
+log_steps = [
+    "count_duplicates_after_processing",
+    "count_duplicates_before_processing",
+    "mask",
+    "repair",
+    "trim",
+]
+
+
 #########
 # RULES #
 #########
@@ -178,7 +218,23 @@ rule target:
             r=[1, 2],
         ),
         expand(Path(outdir, "{sample}.unpaired.fastq.gz"), sample=all_samples),
-        stats_target,
+        # stats steps
+        demux_stats_target,
+        expand(
+            Path(logdir, "count_duplicates_{readset}", "{sample}.log"),
+            sample=all_samples,
+            readset=["before_processing", "after_processing"],
+        ),
+        expand(
+            Path(statdir, "{step}.csv"),
+            step=log_steps,
+        ),
+        Path(statdir, "adaptor_stats.pdf"),
+
+
+##############
+# PROCESSING #
+##############
 
 
 # mask low complexity regions
@@ -333,6 +389,10 @@ rule combine_adaptors:
         "2> {log} "
 
 
+##################
+# DEMULTIPLEXING #
+##################
+
 # demux using cutadapt
 # NOTE! I think the most straightforward way to do this is using cutadapt's
 # [paired adaptor demultiplex mode]
@@ -419,7 +479,7 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
         output:
             r1=Path(workingdir, "010_barcode-check", "{pool}.r1.fastq"),
             r2=Path(workingdir, "010_barcode-check", "{pool}.r2.fastq"),
-            stats=Path(statdir, "check_pool_barcodes", "{pool}.txt"),
+            stats=Path(statdir, "check_barcodes", "{pool}.txt"),
         params:
             barcode_seq=lambda wildcards: get_pool_barcode_seq(wildcards),
             out=Path(rule_tmpdir, "%.r1.fastq").as_posix(),
@@ -455,7 +515,6 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
             "&& "
             "mv {rule_tmpdir}/{params.barcode_seq}.r2.fastq "
             "{output.r2}"
-            # use the last column
 
 
 # check barcodes in individual barcode files
@@ -467,7 +526,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
         output:
             r1=Path(workingdir, "010_barcode-check", "{sample}.r1.fastq"),
             r2=Path(workingdir, "010_barcode-check", "{sample}.r2.fastq"),
-            stats=Path(statdir, "check_sample_barcodes", "{sample}.txt"),
+            stats=Path(statdir, "check_barcodes", "{sample}.txt"),
         params:
             barcode_seq=lambda wildcards: get_sample_barcode_seq(wildcards),
             out=Path(tmpdir, "%.r1.fastq").as_posix(),
@@ -477,7 +536,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
             ),
             streams=2,
         log:
-            Path(logdir, "check_pool_barcodes", "{sample}.log"),
+            Path(logdir, "check_sample_barcodes", "{sample}.log"),
         threads: 2
         resources:
             mem_gb=8,
@@ -502,4 +561,87 @@ with tempfile.TemporaryDirectory() as tmpdir:
             "&& "
             "mv {tmpdir}/{params.barcode_seq}.r2.fastq "
             "{output.r2}"
-            # use the last column
+
+
+#########
+# STATS #
+#########
+
+
+rule plot_adaptor_stats:
+    input:
+        trim_files=expand(
+            Path(statdir, "trim", "{sample}.txt"), sample=all_samples
+        ),
+        summary_file=Path(statdir, "trim.csv"),
+    output:
+        plot=Path(statdir, "adaptor_stats.pdf"),
+    log:
+        Path(logdir, "plot_adaptor_stats.log"),
+    script:
+        shutil.which("plot_adaptor_stats.R")
+
+
+rule combine_step_logs:
+    input:
+        expand(
+            Path(workingdir, "from_logs", "{{step}}", "{sample}.csv"),
+            sample=all_samples,
+        ),
+    output:
+        Path(statdir, "{step}.csv"),
+    shell:
+        "echo 'sample,type,reads,bases' > {output} ; "
+        "cat {input} >> {output}"
+
+
+rule process_step_logs:
+    input:
+        Path(workingdir, "from_logs", "{step}", "{sample}.txt"),
+    output:
+        temp(Path(workingdir, "from_logs", "{step}", "{sample}.csv")),
+    shell:
+        "process_step_logs.py {wildcards.sample} < {input} > {output} "
+
+
+rule grep_logs:
+    input:
+        Path(logdir, "{step}", "{sample}.log"),
+    output:
+        temp(Path(workingdir, "from_logs", "{step}", "{sample}.txt")),
+    shell:
+        # awk -F '[[:space:]]{2,}' means separated by two or more spaces
+        "grep '^\({log_regex}\)' {input} "
+        "| "
+        "awk -F '[[:space:]]{{2,}}' "
+        "'{{print $1, $2, $3}}' "
+        "OFS='\t' "
+        "> {output} "
+
+
+rule count_duplicates:
+    input:
+        unpack(get_dedupe_input),
+    params:
+        mem_gb=lambda wildcards, resources: int(resources.mem_gb - 2),
+    log:
+        Path(logdir, "count_duplicates_{readset}", "{sample}.log"),
+    threads: 2
+    resources:
+        time=lambda wildcards, attempt: 10 * attempt,
+        mem_gb=lambda wildcards, attempt: 4 * attempt,
+    shell:
+        "reformat.sh "
+        "in={input.r1} "
+        "in2={input.r2} "
+        "out=stdout.fastq "
+        "2> /dev/null "
+        "| "
+        "dedupe.sh "
+        "-Xmx{params.mem_gb}g "
+        "-Xms100m "
+        "threads=1 "
+        "in=stdin.fastq "
+        "interleaved=auto "
+        "out=/dev/null "
+        "2> {log}"

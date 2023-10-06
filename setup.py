@@ -33,7 +33,9 @@ setup(
         "console_scripts": ["tcdemux = tcdemux.__main__:main"],
     },
     scripts={
+        "tcdemux/src/process_step_logs.py",
         "tcdemux/src/parse_cutadapt_stats.py",
+        "tcdemux/src/plot_adaptor_stats.R",
         "tcdemux/src/write_barcode_file.py",
     },
     package_data={
