@@ -90,7 +90,7 @@ def main():
 
     # define resources
     smk_resources = {
-        'mem_gb': args['mem_gb']
+        'mem_mb': int(args['mem_gb'] * 1e3)
         }
 
     # run the pipeline
@@ -99,6 +99,7 @@ def main():
         config=args,
         cores=args['threads'],
         resources=smk_resources,
+        overwrite_resource_scopes={"mem_gb":"global"},
         printshellcmds=logger.printshellcmds,
         dryrun=True if args['dry_run'] else False,
         restart_times=args['restart_times'],

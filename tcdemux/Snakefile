@@ -117,7 +117,6 @@ outdir = Path(config["outdir"])
 logdir = Path(outdir, "logs")
 statdir = Path(outdir, "stats")
 
-mem_gb = config["mem_gb"]
 max_threads = config["threads"]
 
 keep_intermediate_files = config["keep_intermediate_files"]
@@ -154,30 +153,14 @@ all_pools = []
 if "pool_name" in sample_data:
     samples_have_internal_barcodes = True
     all_pools = sorted(set(sample_data["pool_name"]))
+    pool_threads = max(1, max_threads // len(all_pools))
     logger.info(f"Detected pool_name field in {sample_data_file}.")
+    logger.info(f"Using {pool_threads} threads per pool for demuxing.")
     logger.info("The following pools will be demuxed using internal barcodes:")
     logger.info(f'{" ".join(all_pools)}')
 else:
     logger.info(f"No pool_name field in {sample_data_file}.")
     logger.info("Not attempting to demux by internal barcode.")
-
-# configure resources
-logger.info(f"{max_threads} threads provided.")
-logger.info(f"{mem_gb} GB RAM provided.")
-sample_threads = max(1, max_threads // len(all_samples))
-sample_ram = max(4, mem_gb // len(all_samples))
-logger.info(f"Using at least {sample_threads} threads per sample.")
-logger.info(f"Using at least {sample_ram} GB RAM per sample.")
-
-if samples_have_internal_barcodes:
-    pool_threads = max(1, max_threads // len(all_pools))
-    pool_ram = max(8, mem_gb // len(all_pools))
-    logger.info(f"Using at least {pool_threads} threads per pool.")
-    logger.info(f"Using at least {pool_ram} GB RAM per pool.")
-else:
-    pool_threads = sample_threads
-    pool_ram = sample_ram
-
 
 # Configure log parsing. These fields will be grepped out of the bbduk logs and
 # show up in the final CSVs.
@@ -208,6 +191,10 @@ log_steps = [
 #########
 # RULES #
 #########
+
+# honour the memory requirement
+# resource_scopes:
+#     mem_mb="global"
 
 
 rule target:
@@ -251,10 +238,10 @@ rule mask:
     threads: 1
     resources:
         time=lambda wildcards, attempt: 10 * attempt,
-        mem_gb=lambda wildcards, attempt: 1 * attempt,
+        mem_mb=lambda wildcards, attempt: 1e3 * attempt,
     shell:
         "bbduk.sh "
-        "-Xmx{resources.mem_gb}g "
+        "-Xmx{resources.mem_mb}m "
         "threads={threads} "
         "in={input.pipe} "
         "int=t "
@@ -279,10 +266,10 @@ rule mask_unpaired:
     threads: 1
     resources:
         time=lambda wildcards, attempt: 10 * attempt,
-        mem_gb=lambda wildcards, attempt: 1 * attempt,
+        mem_mb=lambda wildcards, attempt: 1e3 * attempt,
     shell:
         "bbduk.sh "
-        "-Xmx{resources.mem_gb}g "
+        "-Xmx{resources.mem_mb}m "
         "threads={threads} "
         "in={input} "
         "int=f "
@@ -313,10 +300,10 @@ rule trim:
     threads: 2
     resources:
         time=lambda wildcards, attempt: 10 * attempt,
-        mem_gb=lambda wildcards, attempt: 2 * attempt,
+        mem_mb=lambda wildcards, attempt: 2e3 * attempt,
     shell:
         "bbduk.sh "
-        "-Xmx{resources.mem_gb}g "
+        "-Xmx{resources.mem_mb}m "
         "threads={threads} "
         "in={input.pipe} "
         "int=t "
@@ -337,16 +324,16 @@ rule repair:
     output:
         pipe(Path(workingdir, "030_repair", "{sample}.fastq")),
     params:
-        mem_gb=lambda wildcards, resources: int(resources.mem_gb - 2),
+        mem_mb=lambda wildcards, resources: int(resources.mem_mb * 0.8),
     log:
         Path(logdir, "repair", "{sample}.log"),
     threads: 1
     resources:
         time=lambda wildcards, attempt: 10 * attempt,
-        mem_gb=lambda wildcards, attempt: 4 * attempt,
+        mem_mb=lambda wildcards, attempt: 4e3 * attempt,
     shell:
         "repair.sh "
-        "-Xmx{params.mem_gb}g "
+        "-Xmx{params.mem_mb}m "
         "-Xms100m "
         "in={input.r1} "
         "in2={input.r2} "
@@ -370,11 +357,11 @@ rule combine_adaptors:
     threads: 1
     resources:
         time=lambda wildcards, attempt: 10 * attempt,
-        mem_gb=4,
+        mem_mb=4000,
     shell:
         "cat {input} | "
         "dedupe.sh "
-        "-Xmx{resources.mem_gb}g "
+        "-Xmx{resources.mem_mb}m "
         "in=stdin.fasta "
         "out={output.adaptors} "
         "outd={output.duplicates} "
@@ -485,15 +472,15 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
             barcode_seq=lambda wildcards: get_pool_barcode_seq(wildcards),
             out=Path(rule_tmpdir, "%.r1.fastq").as_posix(),
             out2=Path(rule_tmpdir, "%.r2.fastq").as_posix(),
-            mem_gb=lambda wildcards, resources: int(
-                (resources.mem_gb - 2) // 2
+            mem_mb=lambda wildcards, resources: int(
+                (resources.mem_mb * 0.8) // 2
             ),
             streams=2,
         log:
             Path(logdir, "check_pool_barcodes", "{pool}.log"),
         threads: 2
         resources:
-            mem_gb=8,
+            mem_mb=8000,
         shell:
             "mkdir -p {rule_tmpdir} ; "
             "demuxbyname.sh "
@@ -507,7 +494,7 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
             "in2={input.r2} "
             "streams={params.streams} "
             "threads={threads} "
-            "-Xmx{params.mem_gb}g "
+            "-Xmx{params.mem_mb}m "
             "-Xms100m "
             "2> {log} "
             "&& "
@@ -532,15 +519,15 @@ with tempfile.TemporaryDirectory() as tmpdir:
             barcode_seq=lambda wildcards: get_sample_barcode_seq(wildcards),
             out=Path(tmpdir, "%.r1.fastq").as_posix(),
             out2=Path(tmpdir, "%.r2.fastq").as_posix(),
-            mem_gb=lambda wildcards, resources: int(
-                (resources.mem_gb - 2) // 2
+            mem_mb=lambda wildcards, resources: int(
+                (resources.mem_mb * 0.8) // 2
             ),
             streams=2,
         log:
             Path(logdir, "check_sample_barcodes", "{sample}.log"),
         threads: 2
         resources:
-            mem_gb=8,
+            mem_mb=8000,
         shell:
             "demuxbyname.sh "
             "delimiter=: prefixmode=f "
@@ -553,7 +540,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
             "in2={input.r2} "
             "streams={params.streams} "
             "threads={threads} "
-            "-Xmx{params.mem_gb}g "
+            "-Xmx{params.mem_mb}m "
             "-Xms100m "
             "2> {log} "
             "&& "
@@ -634,27 +621,47 @@ rule grep_logs:
 
 rule count_duplicates:
     input:
-        unpack(get_dedupe_input),
+        Path(workingdir, "{sample}.{readset}.fastq"),
     params:
-        mem_gb=lambda wildcards, resources: int(resources.mem_gb - 2),
+        mem_mb=lambda wildcards, resources: int(resources.mem_mb * 0.8),
     log:
         Path(logdir, "count_duplicates_{readset}", "{sample}.log"),
-    threads: 2
+    threads: 1
     resources:
         time=lambda wildcards, attempt: 10 * attempt,
-        mem_gb=lambda wildcards, attempt: 4 * attempt,
+        mem_mb=lambda wildcards, attempt: (4 * (attempt ^ 2)) * 1e3,
     shell:
-        "reformat.sh "
-        "in={input.r1} "
-        "in2={input.r2} "
-        "out=stdout.fastq "
-        "2> /dev/null "
-        "| "
+        "cat {input} | "
         "dedupe.sh "
-        "-Xmx{params.mem_gb}g "
+        "-Xmx{params.mem_mb}m "
         "-Xms100m "
-        "threads=1 "
+        "threads={threads} "
         "in=stdin.fastq "
         "interleaved=auto "
         "out=/dev/null "
         "2> {log}"
+
+
+rule count_duplicates_input:
+    input:
+        unpack(get_dedupe_input),
+    output:
+        pipe(Path(workingdir, "{sample}.{readset}.fastq")),
+    params:
+        mem_mb=lambda wildcards, resources: int(resources.mem_mb * 0.8),
+    log:
+        Path(logdir, "{sample}.{readset}.reformat.log"),
+    threads: 1
+    resources:
+        time=lambda wildcards, attempt: 10 * attempt,
+        mem_mb=lambda wildcards, attempt: 1e3 * attempt,
+    shell:
+        "reformat.sh "
+        "threads={threads} "
+        "-Xmx{params.mem_mb}m "
+        "-Xms100m "
+        "in={input.r1} "
+        "in2={input.r2} "
+        "out=stdout.fastq "
+        ">> {output} "
+        "2> {log} "
