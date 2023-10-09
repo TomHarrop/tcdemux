@@ -31,12 +31,12 @@ with Docker or Apptainer/Singularity, *e.g.*:
 
    # apptainer / singularity
    apptainer exec \
-       docker://quay.io/biocontainers/tcdemux:0.0.16--pyhdfd78af_0 \
+       docker://quay.io/biocontainers/tcdemux:0.0.17--pyhdfd78af_0 \
        tcdemux
 
    # Docker
    docker pull \
-      quay.io/biocontainers/tcdemux:0.0.16--pyhdfd78af_0
+      quay.io/biocontainers/tcdemux:0.0.17--pyhdfd78af_0
 
 You can also install it with conda, *e.g.*
 
@@ -50,8 +50,10 @@ Manual installation
 Manual installation is not supported, but if you need to do it, here are
 the steps:
 
-1. Install ``bbmap`` and make sure it’s in your path
-2. Install ``tcdemux`` with
+1. Install ``bbmap`` and make sure it’s in your path.
+2. Install ``R`` with the packages ``data.table``, ``bit64``,
+   ``ggplot2`` and ``viridis``.
+3. Install ``tcdemux`` with
    ``python3 -m pip install git+git://github.com/tomharrop/tcdemux.git``.
    ``pip`` will install the python3 dependencies biopython, cutadapt,
    pandas and snakemake.
@@ -81,24 +83,6 @@ resulting in output files called *sample1.r1.fastq.gz*,
 equivalents for sample2. ``tcdemux`` does not demultiplex the samples in
 this case.
 
-**``tcdemux`` does not allow barcode errors**. The external barcodes are
-checked for errors before trimming and masking, and reads with barcode
-errors are discarded.
-
-Barcode errors are sometimes allowed in the Illumina workflow. You can
-check if your fastq files have barcode errors like this:
-
-.. code:: bash
-
-   grep '^@' path/to/file.fastq \
-       | head -n 1000 \
-       | cut -d':' -f10 \
-       | sort \
-       | uniq -c
-
-If you see more than one barcode, then barcode errors were allowed in
-the Illumina workflow.
-
 Additional, internal barcodes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -117,6 +101,29 @@ Here’s an example sample_data file:
 In this case, sample1 and sample2 are multiplexed in pool1 with internal
 barcodes. ``tcdemux`` will demultiplex the pool before trimming and
 masking, resulting in the same files as above.
+
+**``tcdemux`` does not allow barcode errors**
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+External barcodes are checked for errors before trimming and masking,
+and reads with barcode errors are discarded.
+
+Barcode errors are sometimes allowed in the Illumina workflow. You can
+check if your fastq files have barcode errors like this:
+
+.. code:: bash
+
+   grep '^@' path/to/file.fastq \
+       | head -n 1000 \
+       | cut -d':' -f10 \
+       | sort \
+       | uniq -c
+
+If you see more than one barcode, then barcode errors were allowed in
+the Illumina workflow.
+
+``tcdemux`` uses exact barcode matches with no errors allowed when it
+demultiplexes by internal barcode.
 
 Other options
 ~~~~~~~~~~~~~
