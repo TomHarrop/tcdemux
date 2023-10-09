@@ -97,7 +97,10 @@ def main():
         config=args,
         cores=args["threads"],
         resources=smk_resources,
-        overwrite_resource_scopes={"mem_gb": "global"},
+        overwrite_resource_scopes={
+            "mem_gb": "global",
+            "threads": "global",
+        },
         printshellcmds=logger.printshellcmds,
         dryrun=True if args["dry_run"] else False,
         restart_times=args["restart_times"],
