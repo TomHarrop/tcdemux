@@ -1,7 +1,7 @@
-readme: README.rst
+readme: tcdemux/README.rst
 
-README.rst: README.md
-	pandoc -f markdown -t rst README.md > README.rst
+tcdemux/README.rst: README.md
+	pandoc -f markdown -t rst README.md > tcdemux/README.rst
 
 test: pooled unpooled dirty missing
 

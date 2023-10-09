@@ -96,7 +96,7 @@ def demux_stats_target(wildcards):
     # demuxing stats
     if samples_have_internal_barcodes:
         demux_stats = expand(
-            Path(statdir, "cutadapt", "{pool}.demux_stats.csv"), pool=all_pools
+            Path(statdir, "demux", "{pool}.demux_stats.csv"), pool=all_pools
         )
         for x in demux_stats:
             targets.append(x)
@@ -402,9 +402,9 @@ for mypool in all_pools:
 
     rule:
         input:
-            Path(statdir, "cutadapt", f"{mypool}.full_stats.json"),
+            Path(statdir, "demux", f"{mypool}.full_stats.json"),
         output:
-            Path(statdir, "cutadapt", f"{mypool}.demux_stats.csv"),
+            Path(statdir, "demux", f"{mypool}.demux_stats.csv"),
         shell:
             "parse_cutadapt_stats.py < {input} > {output}"
 
@@ -424,11 +424,11 @@ for mypool in all_pools:
                 Path(workingdir, "020_demultiplex", "{sample}.r2.fastq"),
                 sample=pool_samples,
             ),
-            stats=Path(statdir, "cutadapt", f"{mypool}.full_stats.json"),
+            stats=Path(statdir, "demux", f"{mypool}.full_stats.json"),
         params:
             outdir=lambda wildcards, output: Path(output[0]).parent.as_posix(),
         log:
-            Path(logdir, "cutadapt", f"{mypool}.log"),
+            Path(logdir, "demux", f"{mypool}.log"),
         threads: max(2, pool_threads)
         shell:
             "cutadapt "
