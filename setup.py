@@ -7,7 +7,7 @@ from setuptools import find_packages
 
 # load README.rst
 def readme():
-    with open("README.rst") as file:
+    with open("tcdemux/README.rst") as file:
         return file.read()
 
 
