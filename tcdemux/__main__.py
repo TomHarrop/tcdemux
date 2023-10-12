@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from pkg_resources import resource_filename
 from snakemake.logging import logger
 import argparse
+from importlib.metadata import files, version
 import psutil
 import snakemake
 
@@ -80,8 +80,12 @@ def parse_arguments():
 
 
 def main():
+    # get the tcdemux version
+    pkg_version = version(__package__)
+    logger.info(f"tcdemux version {pkg_version}")
+
     # get the snakefile
-    snakefile = resource_filename(__name__, "Snakefile")
+    snakefile = [p.locate() for p in files(__package__) if "Snakefile" in str(p)][0]
     logger.debug(f"Using snakefile {snakefile}")
 
     # get args

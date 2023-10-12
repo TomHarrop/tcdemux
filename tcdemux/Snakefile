@@ -68,8 +68,8 @@ def get_sample_files(wildcards):
 def get_pool_barcode_seq(wildcards):
     pool = wildcards.pool
     pool_data = sample_data[sample_data["pool_name"] == pool]
-    i5_seq = pool_data["i5_index"][0]
-    i7_seq = pool_data["i7_index"][0]
+    i5_seq = pool_data["i5_index"].iloc[0]
+    i7_seq = pool_data["i7_index"].iloc[0]
     i5_rc = Seq(i5_seq).reverse_complement()
     return f"{i7_seq}+{i5_rc}"
 
@@ -77,8 +77,8 @@ def get_pool_barcode_seq(wildcards):
 def get_pool_files(wildcards):
     pool = wildcards.pool
     pool_data = sample_data[sample_data["pool_name"] == pool]
-    r1_file = pool_data["r1_file"][0]
-    r2_file = pool_data["r2_file"][0]
+    r1_file = pool_data["r1_file"].iloc[0]
+    r2_file = pool_data["r2_file"].iloc[0]
     return {
         "r1": Path(read_directory, r1_file),
         "r2": Path(read_directory, r2_file),
@@ -155,9 +155,9 @@ if "pool_name" in sample_data:
     all_pools = sorted(set(sample_data["pool_name"]))
     pool_threads = max(1, max_threads // len(all_pools))
     logger.info(f"Detected pool_name field in {sample_data_file}.")
-    logger.info(f"Using {pool_threads} threads per pool for demuxing.")
     logger.info("The following pools will be demuxed using internal barcodes:")
     logger.info(f'{" ".join(all_pools)}')
+    logger.info(f"Using {pool_threads} threads per pool for demuxing.")
 else:
     logger.info(f"No pool_name field in {sample_data_file}.")
     logger.info("Not attempting to demux by internal barcode.")
@@ -191,10 +191,6 @@ log_steps = [
 #########
 # RULES #
 #########
-
-# honour the memory requirement
-# resource_scopes:
-#     mem_mb="global"
 
 
 rule target:
@@ -637,7 +633,8 @@ rule count_duplicates:
         "-Xms100m "
         "threads={threads} "
         "in=stdin.fastq "
-        "interleaved=auto "
+        "interleaved=t "
+        "absorbcontainment=f "
         "out=/dev/null "
         "2> {log}"
 
