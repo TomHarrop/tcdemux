@@ -13,9 +13,9 @@ def readme():
 
 setup(
     name="tcdemux",
-    version="0.0.17",
+    version="0.0.18",
     description=(
-        "python3 wrapper for demultiplexing " "target capture sequencing results"
+        "python3 wrapper for demultiplexing target capture sequencing results"
     ),
     long_description=readme(),
     url="https://github.com/tomharrop/tcdemux",
