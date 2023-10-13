@@ -1,0 +1,3 @@
+pool_name,i5_index,i7_index,name,internal_index_sequence,r1_file,r2_file
+AG_P8P1C,AGCGCTAG,CCGCGGTT,this_sample_exists,GTGACATC,AG_P8P1C_S97_L002_R1_001.fastq,AG_P8P1C_S97_L002_R2_001.fastq
+AG_P8P1C,AGCGCTAG,CCGCGGTT,this_sample_is_missing,TCGAAAGCAGATGATA,AG_P8P1C_S97_L002_R1_001.fastq,AG_P8P1C_S97_L002_R2_001.fastq

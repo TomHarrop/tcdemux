@@ -1,7 +1,6 @@
 SHELL=/bin/bash
 
 local_version := $(shell python3 setup.py --version)
-container_version := $(shell singularity run docker://ghcr.io/regclient/regctl:v0.5.3 tag ls  quay.io/biocontainers/tcdemux | tail -n1 )
 tmpdir := $(shell mktemp -d)
 
 readme: tcdemux/README.rst
@@ -13,6 +12,7 @@ tcdemux/README.rst: README.md
 tests: test_container test_local
 
 test_container:
+	$(eval container_version=$(shell regctl tag ls  quay.io/biocontainers/tcdemux | tail -n1 ))
 	snakemake -s extras/tests.smk \
 	--config version=$(container_version) outdir="tests/container_$(container_version)" \
 	--use-singularity \
@@ -22,7 +22,7 @@ test_container:
 
 test_local:
 	snakemake -s extras/tests.smk \
-	--config version=$(container_version) outdir="tests/local_$(local_version)" \
+	--config version="" outdir="tests/local_$(local_version)" \
 	--cores 10 \
 
 graph: assets/graph.svg assets/external_only_graph.svg
@@ -34,9 +34,9 @@ assets/graph.svg:
 	--rulegraph \
 	--forceall \
 	--config \
-	sample_data_file=data/samples_graph.csv \
-	read_directory=data/test_data \
-	adaptor_files=data/adaptors/TruSeq3-PE-2.fa \
+	sample_data_file=test-data/samples_graph.csv \
+	read_directory=test-data/raw_reads \
+	adaptor_files=test-data/adaptors/TruSeq3-PE-2.fa \
 	outdir=tests/graph \
 	mem_gb=12 \
 	threads=12 \
@@ -55,9 +55,9 @@ assets/external_only_graph.svg:
 	--rulegraph \
 	--forceall \
 	--config \
-	sample_data_file=data/unpooled_samples_graph.csv \
-	read_directory=data/test_data \
-	adaptor_files=data/adaptors/TruSeq3-PE-2.fa \
+	sample_data_file=test-data/samples_unpooled_graph.csv \
+	read_directory=test-data/raw_reads \
+	adaptor_files=test-data/adaptors/TruSeq3-PE-2.fa \
 	outdir=tests/graph \
 	mem_gb=12 \
 	threads=12 \

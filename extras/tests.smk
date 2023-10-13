@@ -4,85 +4,49 @@ from pathlib import Path
 
 version = config["version"]
 testdir = Path(config["outdir"])
+datadir = Path("test-data")
+adaptors = (
+    [
+        Path(datadir, "adaptors/our_adaptors.fa"),
+        Path(datadir, "adaptors/TruSeq3-PE-2.fa"),
+        Path(datadir, "adaptors/bbmap_39.01_adaptors.fa"),
+    ],
+)
+
 
 tcdemux = f"docker://quay.io/biocontainers/tcdemux:{version}"
 
 
 rule target:
     input:
-        Path(
-            testdir,
-            "pooled",
-            "134473_LibID134573_GAP_BRF_H5TT7DRX3_ATCCACTG-ACGCACCT_S72_L002.r1.fastq.gz",
-        ),
-        Path(
-            testdir,
-            "unpooled",
-            "134473_LibID134573_GAP_BRF_H5TT7DRX3_ATCCACTG-ACGCACCT_S72_L002.r1.fastq.gz",
+        expand(
+            Path(
+                testdir,
+                "{testname}",
+                "done",
+            ),
+            testname=["pooled", "unpooled", "missing"],
         ),
         Path(testdir, "dirty.log"),
-        Path(
-            testdir,
-            "missing",
-            "this_sample_exists.r1.fastq.gz",
-        ),
 
 
-rule pooled:
+rule tcdemux:
     input:
-        sd=Path("data/samples.csv"),
-        adaptors=[
-            Path("data/adaptors/alicia_adapters.fa"),
-            Path("data/adaptors/TruSeq3-PE-2.fa"),
-            Path("data/adaptors/bbmap_39.01_adaptors.fa"),
-        ],
+        sd=Path(datadir, "samples_{testname}.csv"),
+        adaptors=adaptors,
     output:
-        f1=Path(
-            testdir,
-            "pooled",
-            "134473_LibID134573_GAP_BRF_H5TT7DRX3_ATCCACTG-ACGCACCT_S72_L002.r1.fastq.gz",
+        flag=touch(
+            Path(
+                testdir,
+                "{testname}",
+                "done",
+            )
         ),
     log:
-        Path(testdir, "pooled.log"),
+        Path(testdir, "{testname}.log"),
     params:
-        readdir=Path("data/test_data"),
-        outdir=lambda wildcards, output: Path(output.f1).parent,
-        mem_gb=lambda wildcards, resources: int(resources.mem_mb // 1e3),
-    threads: workflow.cores
-    resources:
-        mem_mb=int(16e3),
-    container:
-        tcdemux
-    shell:
-        "tcdemux "
-        "--sample_data {input.sd} "
-        "--adaptors {input.adaptors} "
-        "--outdir {params.outdir} "
-        "--read_directory {params.readdir} "
-        "--threads {threads} "
-        "--mem_gb {params.mem_gb} "
-        "&> {log}"
-
-
-rule unpooled:
-    input:
-        sd=Path("data/unpooled_samples.csv"),
-        adaptors=[
-            Path("data/adaptors/alicia_adapters.fa"),
-            Path("data/adaptors/TruSeq3-PE-2.fa"),
-            Path("data/adaptors/bbmap_39.01_adaptors.fa"),
-        ],
-    output:
-        f1=Path(
-            testdir,
-            "unpooled",
-            "134473_LibID134573_GAP_BRF_H5TT7DRX3_ATCCACTG-ACGCACCT_S72_L002.r1.fastq.gz",
-        ),
-    log:
-        Path(testdir, "unpooled.log"),
-    params:
-        readdir=Path("data/test_data"),
-        outdir=lambda wildcards, output: Path(output.f1).parent,
+        readdir=Path(datadir, "raw_reads"),
+        outdir=lambda wildcards, output: Path(output.flag).parent,
         mem_gb=lambda wildcards, resources: int(resources.mem_mb // 1e3),
     threads: workflow.cores
     resources:
@@ -102,53 +66,13 @@ rule unpooled:
 
 rule dirty:
     input:
-        sd=Path("data/dirty_samples.csv"),
-        adaptors=[
-            Path("data/adaptors/alicia_adapters.fa"),
-            Path("data/adaptors/TruSeq3-PE-2.fa"),
-            Path("data/adaptors/bbmap_39.01_adaptors.fa"),
-        ],
+        sd=Path(datadir, "samples_dirty.csv"),
+        adaptors=adaptors,
     log:
         Path(testdir, "dirty.log"),
     params:
-        readdir=Path("data/test_data"),
+        readdir=Path(datadir, "raw_reads"),
         outdir=Path(testdir, "dirty"),
-        mem_gb=lambda wildcards, resources: int(resources.mem_mb // 1e3),
-    threads: workflow.cores
-    resources:
-        mem_mb=int(16e3),
-    container:
-        tcdemux
-    shell:
-        "tcdemux "
-        "--sample_data {input.sd} "
-        "--adaptors {input.adaptors} "
-        "--outdir {params.outdir} "
-        "--read_directory {params.readdir} "
-        "--threads {threads} "
-        "--mem_gb {params.mem_gb} "
-        "&> {log}"
-
-
-rule missing:
-    input:
-        sd=Path("data/samples_missing.csv"),
-        adaptors=[
-            Path("data/adaptors/alicia_adapters.fa"),
-            Path("data/adaptors/TruSeq3-PE-2.fa"),
-            Path("data/adaptors/bbmap_39.01_adaptors.fa"),
-        ],
-    output:
-        f1=Path(
-            testdir,
-            "missing",
-            "this_sample_exists.r1.fastq.gz",
-        ),
-    log:
-        Path(testdir, "missing.log"),
-    params:
-        readdir=Path("data/test_data"),
-        outdir=lambda wildcards, output: Path(output.f1).parent,
         mem_gb=lambda wildcards, resources: int(resources.mem_mb // 1e3),
     threads: workflow.cores
     resources:

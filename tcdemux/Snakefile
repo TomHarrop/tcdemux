@@ -625,7 +625,7 @@ rule count_duplicates:
     threads: 1
     resources:
         time=lambda wildcards, attempt: 10 * attempt,
-        mem_mb=lambda wildcards, attempt: (4 * (attempt ** 2)) * 1e3,
+        mem_mb=lambda wildcards, attempt: (4 * (2 ** attempt)) * 1e3,
     shell:
         "cat {input} | "
         "dedupe.sh "
