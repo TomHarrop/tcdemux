@@ -12,7 +12,7 @@ tcdemux/README.rst: README.md
 tests: test_container test_local
 
 test_container:
-	$(eval container_version=$(shell regctl tag ls  quay.io/biocontainers/tcdemux | tail -n1 ))
+	$(eval container_version=$(shell wget -qO- https://quay.io/api/v1/repository/biocontainers/tcdemux/tag/ | jq -r '.tags[0].name' ))
 	snakemake -s extras/tests.smk \
 	--config version=$(container_version) outdir="tests/container_$(container_version)" \
 	--use-singularity \
