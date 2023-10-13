@@ -1,57 +1,29 @@
+SHELL=/bin/bash
+
+local_version := $(shell python3 setup.py --version)
+container_version := $(shell singularity run docker://ghcr.io/regclient/regctl:v0.5.3 tag ls  quay.io/biocontainers/tcdemux | tail -n1 )
+tmpdir := $(shell mktemp -d)
+
 readme: tcdemux/README.rst
 
 tcdemux/README.rst: README.md
 	pandoc -f markdown -t rst README.md > tcdemux/README.rst
 
-test: pooled unpooled dirty missing
 
-pooled: tests/pooled/134501_LibID134601_GAP_BRF_H5TT7DRX3_GCTTGTCA-GTATGTTC_S82_L002_r1.fastq.gz
-tests/pooled/134501_LibID134601_GAP_BRF_H5TT7DRX3_GCTTGTCA-GTATGTTC_S82_L002_r1.fastq.gz:
-	mkdir -p tests/pooled && \
-	tcdemux \
-	--sample_data data/samples.csv \
-	--adaptors data/adaptors/alicia_adapters.fa data/adaptors/TruSeq3-PE-2.fa data/adaptors/bbmap_39.01_adaptors.fa \
-	--outdir tests/pooled \
-	--read_directory data/test_data \
-	--threads 10 \
-	--mem_gb 16 \
-	2>&1 | tee tests/pooled/sm.log
+tests: test_container test_local
 
-unpooled: tests/unpooled/134486_LibID134586_GAP_BRF_H5TT7DRX3_CCGCGGTT-CTAGCGCT_S10_L002_r1.fastq.gz
-tests/unpooled/134486_LibID134586_GAP_BRF_H5TT7DRX3_CCGCGGTT-CTAGCGCT_S10_L002_r1.fastq.gz:
-	mkdir -p tests/unpooled && \
-	tcdemux \
-	--sample_data data/unpooled_samples.csv \
-	--adaptors data/adaptors/alicia_adapters.fa data/adaptors/TruSeq3-PE-2.fa data/adaptors/bbmap_39.01_adaptors.fa \
-	--outdir tests/unpooled \
-	--read_directory data/test_data \
-	--threads 10 \
-	--mem_gb 16
-	2>&1 | tee tests/unpooled/sm.log
+test_container:
+	snakemake -s extras/tests.smk \
+	--config version=$(container_version) outdir="tests/container_$(container_version)" \
+	--use-singularity \
+	--singularity-args "-B /datasets,$(PWD),$(tmpdir) -H $(tmpdir) --pwd $(PWD) --containall --cleanenv --writable-tmpfs" \
+	--printshellcmds \
+	--cores 10 \
 
-dirty: tests/dirty/sm.log
-tests/dirty/sm.log:
-	mkdir -p tests/dirty && \
-	tcdemux \
-	--sample_data data/dirty_samples.csv \
-	--adaptors data/adaptors/alicia_adapters.fa data/adaptors/TruSeq3-PE-2.fa data/adaptors/bbmap_39.01_adaptors.fa \
-	--outdir tests/dirty \
-	--read_directory data/test_data \
-	--threads 10 \
-	--mem_gb 16 \
-	2>&1 | tee tests/dirty/sm.log
-
-missing: tests/missing/this_sample_exists.unpaired.fastq.gz
-tests/missing/this_sample_exists.unpaired.fastq.gz:
-	mkdir -p tests/missing && \
-	tcdemux \
-	--sample_data data/samples_missing.csv \
-	--adaptors data/adaptors/alicia_adapters.fa data/adaptors/TruSeq3-PE-2.fa data/adaptors/bbmap_39.01_adaptors.fa \
-	--outdir tests/missing \
-	--read_directory data/test_data \
-	--threads 10 \
-	--mem_gb 16 \
-	2>&1 | tee tests/missing/sm.log
+test_local:
+	snakemake -s extras/tests.smk \
+	--config version=$(container_version) outdir="tests/local_$(local_version)" \
+	--cores 10 \
 
 graph: assets/graph.svg assets/external_only_graph.svg
 

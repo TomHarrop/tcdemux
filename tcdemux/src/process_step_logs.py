@@ -5,7 +5,7 @@ import pandas as pd
 
 # Check if the sample name argument is provided
 if len(sys.argv) != 2:
-    print("Usage: script.py sample_name", file=sys.stderr)
+    print("Usage: process_step_logs.py sample_name", file=sys.stderr)
     sys.exit(1)
 
 sample_name = sys.argv[1]
