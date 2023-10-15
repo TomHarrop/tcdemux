@@ -319,8 +319,6 @@ rule repair:
         unpack(get_repair_input),
     output:
         pipe(Path(workingdir, "030_repair", "{sample}.fastq")),
-    params:
-        mem_mb=lambda wildcards, resources: int(resources.mem_mb * 0.8),
     log:
         Path(logdir, "repair", "{sample}.log"),
     threads: 1
@@ -329,7 +327,7 @@ rule repair:
         mem_mb=lambda wildcards, attempt: 4e3 * attempt,
     shell:
         "repair.sh "
-        "-Xmx{params.mem_mb}m "
+        "-Xmx{resources.mem_mb}m "
         "-Xms100m "
         "in={input.r1} "
         "in2={input.r2} "
@@ -468,9 +466,6 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
             barcode_seq=lambda wildcards: get_pool_barcode_seq(wildcards),
             out=Path(rule_tmpdir, "%.r1.fastq").as_posix(),
             out2=Path(rule_tmpdir, "%.r2.fastq").as_posix(),
-            mem_mb=lambda wildcards, resources: int(
-                (resources.mem_mb * 0.8) // 2
-            ),
             streams=2,
         log:
             Path(logdir, "check_pool_barcodes", "{pool}.log"),
@@ -490,7 +485,7 @@ with tempfile.TemporaryDirectory() as rule_tmpdir:
             "in2={input.r2} "
             "streams={params.streams} "
             "threads={threads} "
-            "-Xmx{params.mem_mb}m "
+            "-Xmx{resources.mem_mb}m "
             "-Xms100m "
             "2> {log} "
             "&& "
@@ -515,9 +510,6 @@ with tempfile.TemporaryDirectory() as tmpdir:
             barcode_seq=lambda wildcards: get_sample_barcode_seq(wildcards),
             out=Path(tmpdir, "%.r1.fastq").as_posix(),
             out2=Path(tmpdir, "%.r2.fastq").as_posix(),
-            mem_mb=lambda wildcards, resources: int(
-                (resources.mem_mb * 0.8) // 2
-            ),
             streams=2,
         log:
             Path(logdir, "check_sample_barcodes", "{sample}.log"),
@@ -536,7 +528,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
             "in2={input.r2} "
             "streams={params.streams} "
             "threads={threads} "
-            "-Xmx{params.mem_mb}m "
+            "-Xmx{resources.mem_mb}m "
             "-Xms100m "
             "2> {log} "
             "&& "
@@ -618,8 +610,6 @@ rule grep_logs:
 rule count_duplicates:
     input:
         Path(workingdir, "{sample}.{readset}.fastq"),
-    params:
-        mem_mb=lambda wildcards, resources: int(resources.mem_mb * 0.8),
     log:
         Path(logdir, "count_duplicates_{readset}", "{sample}.log"),
     threads: 
@@ -630,7 +620,7 @@ rule count_duplicates:
     shell:
         "cat {input} | "
         "dedupe.sh "
-        "-Xmx{params.mem_mb}m "
+        "-Xmx{resources.mem_mb}m "
         "-Xms100m "
         "threads={threads} "
         "in=stdin.fastq "
@@ -645,8 +635,6 @@ rule count_duplicates_input:
         unpack(get_dedupe_input),
     output:
         pipe(Path(workingdir, "{sample}.{readset}.fastq")),
-    params:
-        mem_mb=lambda wildcards, resources: int(resources.mem_mb * 0.8),
     log:
         Path(logdir, "count_duplicates_{readset}", "{sample}.reformat.log"),
     threads: 1
@@ -656,7 +644,7 @@ rule count_duplicates_input:
     shell:
         "reformat.sh "
         "threads={threads} "
-        "-Xmx{params.mem_mb}m "
+        "-Xmx{resources.mem_mb}m "
         "-Xms100m "
         "in={input.r1} "
         "in2={input.r2} "
