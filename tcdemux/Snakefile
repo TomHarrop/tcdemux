@@ -622,7 +622,8 @@ rule count_duplicates:
         mem_mb=lambda wildcards, resources: int(resources.mem_mb * 0.8),
     log:
         Path(logdir, "count_duplicates_{readset}", "{sample}.log"),
-    threads: 1
+    threads: 
+        lambda wildcards, attempt: int(1 * (2 ** attempt))
     resources:
         time=lambda wildcards, attempt: 10 * attempt,
         mem_mb=lambda wildcards, attempt: (4 * (2 ** attempt)) * 1e3,
