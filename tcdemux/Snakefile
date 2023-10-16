@@ -166,12 +166,14 @@ else:
 # show up in the final CSVs.
 log_fields = [
     "Containments:",
+    "Duplicates Found:",
     "Duplicates:",
     "Entropy-masked:",
     "FTrimmed:",
     "Input:",
     "KTrimmed:",
     "Pairs:",
+    "Reads In:",
     "Result:",
     "Singletons:",
 ]
@@ -609,45 +611,21 @@ rule grep_logs:
 
 rule count_duplicates:
     input:
-        Path(workingdir, "{sample}.{readset}.fastq"),
+        unpack(get_dedupe_input),
     log:
         Path(logdir, "count_duplicates_{readset}", "{sample}.log"),
-    threads: 
-        lambda wildcards, attempt: int(1 * (2 ** attempt))
+    threads: lambda wildcards, attempt: int(2**attempt)
     resources:
         time=lambda wildcards, attempt: 10 * attempt,
-        mem_mb=lambda wildcards, attempt: (4 * (2 ** attempt)) * 1e3,
+        mem_mb=lambda wildcards, attempt: (4 * (2**attempt)) * 1e3,
     shell:
-        "cat {input} | "
-        "dedupe.sh "
+        "timeout {resources.time}m "
+        "clumpify.sh "
         "-Xmx{resources.mem_mb}m "
         "-Xms100m "
         "threads={threads} "
-        "in=stdin.fastq "
-        "interleaved=t "
-        "absorbcontainment=f "
-        "out=/dev/null "
-        "2> {log}"
-
-
-rule count_duplicates_input:
-    input:
-        unpack(get_dedupe_input),
-    output:
-        pipe(Path(workingdir, "{sample}.{readset}.fastq")),
-    log:
-        Path(logdir, "count_duplicates_{readset}", "{sample}.reformat.log"),
-    threads: 1
-    resources:
-        time=lambda wildcards, attempt: 10 * attempt,
-        mem_mb=lambda wildcards, attempt: 1e3 * attempt,
-    shell:
-        "reformat.sh "
-        "threads={threads} "
-        "-Xmx{resources.mem_mb}m "
-        "-Xms100m "
         "in={input.r1} "
         "in2={input.r2} "
-        "out=stdout.fastq "
-        ">> {output} "
-        "2> {log} "
+        "dedupe=t "
+        "subs=0 "
+        "2> {log}"

@@ -16,8 +16,18 @@ df = pd.read_csv(sys.stdin, delimiter="\t", header=None)
 # mung the columns
 df.columns = ["V1", "V2", "V3"]
 df["type"] = df["V1"].str.replace(r"[^a-zA-Z]", "", regex=True)
-df["reads"] = pd.to_numeric(df["V2"].str.split().str[0])
-df["bases"] = pd.to_numeric(df["V3"].str.split().str[0])
+
+# if we get an attribute error, it's probably because the values are
+# already numeric
+try:
+    df["reads"] = pd.to_numeric(df["V2"].str.split().str[0])
+except AttributeError:
+    df["reads"] = pd.to_numeric(df["V2"])
+
+try:
+    df["bases"] = pd.to_numeric(df["V3"].str.split().str[0])
+except AttributeError:
+    df["bases"] = pd.to_numeric(df["V3"])
 
 # Add the sample name as an extra column
 df["sample"] = sample_name

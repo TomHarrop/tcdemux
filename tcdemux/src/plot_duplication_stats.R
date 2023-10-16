@@ -28,7 +28,7 @@ dup_data <- dcast(
   value.var = "reads"
 )
 
-dup_data[, "Duplication rate" := Duplicates / Input]
+dup_data[, "Duplication rate" := DuplicatesFound / ReadsIn]
 dup_data[, step := factor(step, levels = c("Raw", "Processed"))]
 
 gp <- ggplot(dup_data, aes(x = `Duplication rate`)) +
