@@ -628,4 +628,5 @@ rule count_duplicates:
         "in2={input.r2} "
         "dedupe=t "
         "subs=0 "
+        "usetmpdir=t "
         "2> {log}"
