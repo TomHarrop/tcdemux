@@ -88,6 +88,8 @@ def get_pool_files(wildcards):
 def sample_name_sanitiser(sample_name):
     if re.compile("[^a-zA-Z0-9_-]").search(sample_name):
         raise ValueError(f"{sample_name} contains special character(s)")
+    if "__" in sample_name:
+        raise ValueError(f"{sample_name} contains double underscores")
 
 
 # because demux is conditional this needs to be a function
@@ -140,9 +142,17 @@ sample_data = pd.read_csv(sample_data_file, index_col="name")
 all_samples = sorted(set(sample_data.index))
 
 # make sure there are no special characters
+bad_samples = []
 for sample in all_samples:
-    sample_name_sanitiser(sample)
-    logger.debug(f"sample {sample} appears sane")
+    try:
+        sample_name_sanitiser(sample)
+        logger.debug(f"sample {sample} appears sane")
+    except ValueError as e:
+        bad_samples.append(str(e))
+
+if len(bad_samples) > 0:
+    error_message = "Bad sample names found:\n" + "\n".join(bad_samples)
+    raise ValueError(error_message)
 
 # Check for the pool_name field.
 # If the pool_name field is not present, we don't need to demultiplex internal

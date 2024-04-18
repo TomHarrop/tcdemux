@@ -102,6 +102,20 @@ In this case, sample1 and sample2 are multiplexed in pool1 with internal
 barcodes. ``tcdemux`` will demultiplex the pool before trimming and
 masking, resulting in the same files as above.
 
+Sample names
+~~~~~~~~~~~~
+
+Sample names will be checked for characters that are not uppercase or
+lowercase letters, digits, or underscores. The names will also be
+checked for double underscores. If any of these characters are found,
+the pipeline will print a message end exit.
+
+These characters cause issues for other software used in target capture
+analysis.
+
+You can fix this by changing the names in the sample_data and running
+``tcdemux`` again.
+
 **``tcdemux`` does not allow barcode errors**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
