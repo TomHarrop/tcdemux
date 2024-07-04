@@ -6,7 +6,7 @@ Demultiplex files and prepare reads for the target capture analysis pipeline.
 2. If the libraries are pooled, demux by internal barcode
 3. Verify pairing
 4. Trim adaptors
-5. Mask low-complexity regions
+5. Mask low-complexity regions, and optionally trim low-quality bases.
 6. Collect stats on steps 1--5.
 
 Demultiplexing by internal barcode is done with `cutadapt`.
