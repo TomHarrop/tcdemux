@@ -123,6 +123,8 @@ max_threads = config["threads"]
 
 keep_intermediate_files = config["keep_intermediate_files"]
 
+qtrim = config["qtrim"]
+trimq = config["trimq"]
 
 ########
 # MAIN #
@@ -187,6 +189,10 @@ log_fields = [
     "Result:",
     "Singletons:",
 ]
+
+if qtrim:
+    log_fields.append("QTrimmed:")
+
 log_regex = "\|".join(log_fields)
 
 # These logs will be grepped for stats. Don't try to parse the demuxbyname
@@ -241,6 +247,8 @@ rule mask:
         r1=Path(outdir, "{sample}.r1.fastq.gz"),
         r2=Path(outdir, "{sample}.r2.fastq.gz"),
         stats=Path(statdir, "mask", "{sample}.txt"),
+    params:
+        qtrim=lambda wildcards: f"qtrim=r trimq={trimq}" if qtrim else "",
     log:
         Path(logdir, "mask", "{sample}.log"),
     threads: 1
@@ -259,6 +267,7 @@ rule mask:
         "entropy=0.8 "
         "entropywindow=20 "
         "entropymask=t "
+        "{params.qtrim} "
         "stats={output.stats} "
         "2> {log} "
 

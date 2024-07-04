@@ -69,6 +69,19 @@ def parse_arguments():
     parser.add_argument(
         "--keep_intermediate_files", action=argparse.BooleanOptionalAction
     )
+    parser.add_argument(
+        "--qtrim",
+        help="Trim right end of reads to remove bases with quality below trimq.",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
+    parser.add_argument(
+        "--trimq",
+        type=float,
+        dest="trimq",
+        help="Regions with average quality BELOW this will be trimmed, if qtrim is enabled",
+        default=6.0,
+    )
 
     args = vars(parser.parse_args())
     return args

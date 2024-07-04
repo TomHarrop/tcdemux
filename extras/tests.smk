@@ -23,9 +23,11 @@ rule target:
             Path(
                 testdir,
                 "{testname}",
+                "{trim}",
                 "done",
             ),
             testname=["pooled", "unpooled", "missing"],
+            trim=["qtrim", "no-qtrim"],
         ),
         Path(testdir, "dirty.log"),
 
@@ -39,11 +41,12 @@ rule tcdemux:
             Path(
                 testdir,
                 "{testname}",
+                "{trim}",
                 "done",
             )
         ),
     log:
-        Path(testdir, "{testname}.log"),
+        Path(testdir, "{testname}.{trim}.log"),
     params:
         readdir=Path(datadir, "raw_reads"),
         outdir=lambda wildcards, output: Path(output.flag).parent,
@@ -61,6 +64,7 @@ rule tcdemux:
         "--read_directory {params.readdir} "
         "--threads {threads} "
         "--mem_gb {params.mem_gb} "
+        "--{wildcards.trim} "
         "&> {log}"
 
 
