@@ -13,7 +13,7 @@ def readme():
 
 setup(
     name="tcdemux",
-    version="0.0.26",
+    version="0.1.1",
     description=(
         "python3 wrapper for demultiplexing target capture sequencing results"
     ),
@@ -25,9 +25,9 @@ setup(
     packages=find_packages(),
     install_requires=[
         "biopython>=1.81",
-        "cutadapt>=4.4",
-        "pandas>=2.0.3",
-        "snakemake>=7.31.0",
+        "cutadapt>=4.5",
+        "pandas>=2.1.1",
+        "snakemake>=7.32.4,<8.0.0",
     ],
     entry_points={
         "console_scripts": ["tcdemux = tcdemux.__main__:main"],
