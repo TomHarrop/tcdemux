@@ -1,5 +1,7 @@
 # tcdemux
 
+[![DOI](https://zenodo.org/badge/673640111.svg)](https://zenodo.org/doi/10.5281/zenodo.13309000)
+
 Demultiplex files and prepare reads for the target capture analysis pipeline.
 
 1. Check external barcodes
