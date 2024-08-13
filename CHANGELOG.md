@@ -1,11 +1,16 @@
 # Changelog
 
-## (unreleased)
+## 0.1.1 (2024-08-13)
+
+### Changes
+
+* Tagging a release for Zenodo.
 
 ### Other
 
-* Update README.md.
+* Add changelog.
 
+* Update README.md.
 
 ## 0.0.26 (2024-07-04)
 
@@ -17,7 +22,6 @@
 
 * Add quality trimming to final step.
 
-
 ## 0.0.25 (2024-04-18)
 
 ### Other
@@ -26,20 +30,17 @@
 
 * Update graphs.
 
-
 ## 0.0.24 (2023-10-16)
 
 ### Other
 
 * Have to tell clumpify to use tmp.
 
-
 ## 0.0.23 (2023-10-16)
 
 ### Other
 
 * Switch to clumpify for duplicate counting.
-
 
 ## 0.0.22 (2023-10-15)
 
@@ -49,7 +50,6 @@
 
 * Don't try to scale resources (issue #22)
 
-
 ## 0.0.21 (2023-10-15)
 
 ### Other
@@ -58,20 +58,17 @@
 
 * Use quay API for latest tag.
 
-
 ## 0.0.20 (2023-10-13)
 
 ### Other
 
 * Actually learn the learnings.
 
-
 ## 0.0.19 (2023-10-13)
 
 ### Other
 
 * TIL python exponents.
-
 
 ## 0.0.18 (2023-10-12)
 
@@ -82,7 +79,6 @@
   don't count containments, it takes too long
 
 * Don't count containments, it takes too long.
-
 
 ## 0.0.17 (2023-10-09)
 
@@ -103,7 +99,6 @@
 * Fix mem_mb param.
 
 * Update graphs.
-
 
 ## 0.0.16 (2023-10-06)
 
@@ -131,7 +126,6 @@
 
 * Cutadapt stats in json format.
 
-
 ## 0.0.15 (2023-09-14)
 
 ### Other
@@ -141,7 +135,6 @@
   hook into snakemake logger
 
 * Hook into snakemake logger.
-
 
 ## 0.0.14 (2023-09-13)
 
@@ -173,7 +166,6 @@
 
 * Try using python only.
 
-
 ## 0.0.13 (2023-09-08)
 
 ### Other
@@ -188,7 +180,6 @@
 
 * Tidy up filenams.
 
-
 ## 0.0.12 (2023-09-01)
 
 ### Other
@@ -198,7 +189,6 @@
   Added test for special characters in filenames (fixes #11)
 
 * Added test for special characters in filenames (fixes #11)
-
 
 ## 0.0.11 (2023-09-01)
 
@@ -210,7 +200,6 @@
 
 * Memory for repair.
 
-
 ## 0.0.10 (2023-09-01)
 
 ### Other
@@ -221,7 +210,6 @@
 
 * Allow parallel demux but be stricter with RAM (#7)
 
-
 ## 0.0.9 (2023-09-01)
 
 ### Other
@@ -231,7 +219,6 @@
   Hard code RAM and prevent more than one demux job (#7)
 
 * Hard code RAM and prevent more than one demux job (#7)
-
 
 ## 0.0.8 (2023-08-31)
 
@@ -245,7 +232,6 @@
 
 * Readme typos.
 
-
 ## 0.0.7 (2023-08-17)
 
 ### Other
@@ -257,7 +243,6 @@
 * Add thread advice.
 
 * Simpler threading, hopefully higher throughput.
-
 
 ## 0.0.6 (2023-08-16)
 
@@ -287,20 +272,17 @@
 
 * Update readme.
 
-
 ## 0.0.5 (2023-08-11)
 
 ### Other
 
 * Dont lock workdir.
 
-
 ## 0.0.4 (2023-08-11)
 
 ### Other
 
 * Include script.
-
 
 ## 0.0.3 (2023-08-11)
 
@@ -311,7 +293,6 @@
   update thread logic
 
 * Update thread logic.
-
 
 ## 0.0.2 (2023-08-11)
 
@@ -334,7 +315,6 @@
 * Tidy.
 
 * Tidy.
-
 
 ## 0.0.1 (2023-08-11)
 
@@ -483,5 +463,3 @@
 * Start design.
 
 * Initial commit.
-
-
